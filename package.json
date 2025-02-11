@@ -4,6 +4,7 @@
   "description": "My first study api",
   "main": "index.js",
   "scripts": {
+    "dev": "node --watch index.js",
     "test": "jest"
   },
   "repository": {
