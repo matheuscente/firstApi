@@ -40,8 +40,5 @@ class Product {
     }
 }
 
-<<<<<<< HEAD
+
 module.exports = new Product().model
-=======
-model.exports = new Product().model
->>>>>>> feat/create-models
