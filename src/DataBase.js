@@ -1,4 +1,3 @@
-const { config } = require("dotenv");
 const {Sequelize} = require("sequelize")
 require('dotenv').config({path: './config.env'})
 
