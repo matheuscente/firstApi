@@ -5,11 +5,7 @@ const inventory = require("./Inventory.js")
 
 class InventoryMovement {
     constructor() {
-<<<<<<< HEAD
-        this.model = database.db.define("inventory_movement", {
-=======
         this.model = database.db.define("InventoryMovement", {
->>>>>>> feat/create-models
             id: {
                 type: database.db.Sequelize.INTEGER,
                 primaryKey: true,
@@ -62,7 +58,6 @@ class InventoryMovement {
 
 
         const associations = {
-<<<<<<< HEAD
             user: 'userId',
             product: 'productId',
             inventory: 'inventoryId',
@@ -72,26 +67,12 @@ class InventoryMovement {
             console.log(database.db.models)
             const foreignKey = associations[modelName];
             this.model.belongsTo(database.db.models[modelName], { foreignKey });
-            database.db.models[modelName].hasMany(this.model, { foreignKey });
-=======
-            users: 'userId',
-            products: 'productId',
-            inventorys: 'inventoryId',
-          };
-          
-          for (const model in associations) {
-            const foreignKey = associations[model];
-            this.model.belongsTo(sequelize.models[model], { foreignKey });
-            sequelize.models[model].hasMany(this.model, { foreignKey });
->>>>>>> feat/create-models
+            database.db.models[modelName].hasMany(this.model)
           }
     }
 
-    
-<<<<<<< HEAD
+
 }
 
 module.exports = new InventoryMovement().model
-=======
-}
->>>>>>> feat/create-models
+
