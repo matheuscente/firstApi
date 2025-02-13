@@ -2,8 +2,9 @@ class ApiProduct {
 
     async findAll(req, res) {
         try {
-            const product = {} // await service.findAll()
-            res.status(200).json(product)
+            const organizationId = 1
+            const products = [{}] // await service.findAll(organizationId)
+            res.status(200).json(products)
         } catch(error) {
             res.status(400).json({error: error})
         }
@@ -11,8 +12,9 @@ class ApiProduct {
 
     async findOne(req, res) {
         try {
+            const organizationId = 1
             const {id} = req.params
-            const product = {} // await service.findOne(id)
+            const product = {} // await service.findOne(organizationId, id)
             res.status(200).json(product)
         } catch(error) {
             res.status(400).json({error: error})
@@ -22,8 +24,9 @@ class ApiProduct {
 
     async create(req, res) {
         try {
-            const {name, description, organizationId} = req.body
-            const product = {} //await service.create(name, description, organizationId)
+            const organizationId = 1
+            const {name, description} = req.body
+            const product = {name, description, organizationId} //await service.create(name, description, organizationId)
             res.status(201).json({created: product})
         } catch(error) {
             res.status(400).json({error: error})
@@ -33,9 +36,10 @@ class ApiProduct {
 
     async update(req, res) {
         try{
+            const organizationId = 1
             const {id} = req.params
             const {field, value} = req.body
-            //await service.update(id ,field, value)
+            //await service.update(organizationId, id ,field, value)
             const product = {} //await this.findOne(id)
             res.status(201).json({product})
         } catch(error) {
@@ -45,8 +49,9 @@ class ApiProduct {
 
     async delete(req, res) {
         try{
+            const organizationId = 1
             const {id} = req.params
-            const product = {} //await service.delete(id)
+            const product = {} //await service.delete(organizationId, id)
             res.status(201).json({product})
         } catch(error) {
             res.status(400).json({error: error})

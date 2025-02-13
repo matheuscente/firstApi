@@ -3,10 +3,10 @@ const controller = require("../controllers/InventoryMovement.js")
 
 const route = express.Router()
 
-route.get('/',  controller.findAll)
-route.get('/:id',  controller.findOne)
-route.post('/',  controller.create)
-route.put('/:id',  controller.update)
-route.delete('/:id',  controller.delete)
+route.get('/:inventoryId/',  controller.findAll)
+route.get('/:inventoryId/:id',  controller.findOne)
+route.post('/:inventoryId/',  controller.create)
+route.put('/:inventoryId/:id',  controller.update)
+route.delete('/:inventoryId/:id',  controller.delete)
 
 module.exports = route

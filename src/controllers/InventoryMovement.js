@@ -2,8 +2,10 @@ class ApiMovement {
 
     async findAll(req, res) {
         try {
-            const movement = {} // await service.findAll()
-            res.status(200).json(movement)
+            const organizationId = 1
+            const {inventoryId} = req.params
+            const movements = [{}] // await service.findAll(organizationId, inventoryId)
+            res.status(200).json(movements)
         } catch(error) {
             res.status(400).json({error: error})
         }
@@ -11,8 +13,9 @@ class ApiMovement {
 
     async findOne(req, res) {
         try {
-            const {id} = req.params
-            const movement = {} // await service.findOne(id)
+            const organizationId = 1
+            const {id, inventoryId} = req.params
+            const movement = {} // await service.findOne(id, organizationId, inventoryId)
             res.status(200).json(movement)
         } catch(error) {
             res.status(400).json({error: error})
@@ -22,7 +25,9 @@ class ApiMovement {
 
     async create(req, res) {
         try {
-            const {userId, inventoryId, ProductId, amount, typeMoviment} = req.body
+            const userId = 1
+            const {inventoryId} = req.params
+            const {amount, typeMoviment, productId} = req.body
             const movement = {} //await service.create(userId, inventoryId, ProductId, amount, typeMoviment)
             res.status(201).json({created: movement})
         } catch(error) {
@@ -33,10 +38,9 @@ class ApiMovement {
 
     async update(req, res) {
         try{
-            const {id} = req.params
+            const {id, inventoryId} = req.params
             const {field, value} = req.body
-            //await service.update(id ,field, value)
-            const movement = {} //await this.findOne(id)
+            const movement = {} //await service.update(id ,inventoryId, field, value)
             res.status(201).json({movement})
         } catch(error) {
             res.status(400).json({error: error})
@@ -45,8 +49,8 @@ class ApiMovement {
 
     async delete(req, res) {
         try{
-            const {id} = req.params
-            const movement = {} //await service.delete(id)
+            const {id, inventoryId} = req.params
+            const movement = {} //await service.delete(id, inventoryId)
             res.status(201).json({movement})
         } catch(error) {
             res.status(400).json({error: error})

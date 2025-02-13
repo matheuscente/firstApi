@@ -2,8 +2,9 @@ class ApiUser {
 
     async findAll(req, res) {
         try {
-            const user = {} // await service.findAll()
-            res.status(200).json(user)
+            const organizationId = 1
+            const users = [{}] // await service.findAll()
+            res.status(200).json(users)
         } catch(error) {
             res.status(400).json({error: error})
         }
@@ -11,8 +12,9 @@ class ApiUser {
 
     async findOne(req, res) {
         try {
+            const organizationId = 1
             const {id} = req.params
-            const user = {} // await service.findOne(id)
+            const user = {id} // await service.findOne(id)
             res.status(200).json(user)
         } catch(error) {
             res.status(400).json({error: error})
@@ -22,8 +24,9 @@ class ApiUser {
 
     async create(req, res) {
         try {
-            const {name, email, senha, organizationId} = req.body
-            const user = {} //await service.create(name, email, senha, organizationId)
+            const organizationId = 1
+            const {name, email, password, role} = req.body
+            const user = {name, email, password, role} //await service.create(name, email, password, role, organizationId)
             res.status(201).json({created: user})
         } catch(error) {
             res.status(400).json({error: error})
@@ -33,10 +36,10 @@ class ApiUser {
 
     async update(req, res) {
         try{
+            const organizationId = 1
             const {id} = req.params
             const {field, value} = req.body
-            //await service.update(id ,field, value)
-            const user = {} //await this.findOne(id)
+            const user = {} //await service.update(id ,field, value)
             res.status(201).json({user})
         } catch(error) {
             res.status(400).json({error: error})
@@ -45,6 +48,7 @@ class ApiUser {
 
     async delete(req, res) {
         try{
+            const organizationId = 1
             const {id} = req.params
             const user = {} //await service.delete(id)
             res.status(201).json({user})
