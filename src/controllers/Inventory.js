@@ -12,7 +12,7 @@ class ApiInventory {
     async findOne(req, res) {
         try {
             const organizationId = 1
-            const {id} = req.params
+            const id = req.params.id
             const inventory = {} // await service.findOne(id)
             res.status(200).json(inventory)
         } catch(error) {
@@ -35,7 +35,7 @@ class ApiInventory {
     async update(req, res) {
         try{
             const organizationId = 1
-            const {id} = req.params
+            const id = req.params.id
             const {name} = req.body
             const inventory = {id, name} //await service.update(id, name)
             res.status(201).json({inventory})
@@ -47,7 +47,7 @@ class ApiInventory {
     async delete(req, res) {
         try{
             const organizationId = 1
-            const {id} = req.params
+            const id = req.params.id
             const inventory = {} //await service.delete(id)
             res.status(201).json({inventory})
         } catch(error) {

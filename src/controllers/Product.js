@@ -13,7 +13,7 @@ class ApiProduct {
     async findOne(req, res) {
         try {
             const organizationId = 1
-            const {id} = req.params
+            const id = req.params.id
             const product = {} // await service.findOne(organizationId, id)
             res.status(200).json(product)
         } catch(error) {
@@ -37,7 +37,7 @@ class ApiProduct {
     async update(req, res) {
         try{
             const organizationId = 1
-            const {id} = req.params
+            const id = req.params.id
             const {field, value} = req.body
             //await service.update(organizationId, id ,field, value)
             const product = {} //await this.findOne(id)
@@ -50,7 +50,7 @@ class ApiProduct {
     async delete(req, res) {
         try{
             const organizationId = 1
-            const {id} = req.params
+            const id = req.params.id
             const product = {} //await service.delete(organizationId, id)
             res.status(201).json({product})
         } catch(error) {

@@ -1,15 +1,16 @@
-const error = require('../services/CustomizedError.js')
 const service = require('../services/Organization.js')
 
 class ApiOrganization {
     async findOne(req, res) {
         try {
-            const {id} = req.params
+            const id = req.params.id
             const organization =  await service.findOne(id)
             res.status(200).json(organization)
         } catch(err) {
-            if(err instanceof error) {
-                res.status(400).json({error: message})
+            console.log(err)
+            if(err.code === 1) {
+                res.status(400).json({error: err.message})
+
             } else {
                 res.status(400).json({error: 'unknown error'})
             }
@@ -23,9 +24,10 @@ class ApiOrganization {
             const organization = await service.create(name, address, phone, email)
             res.status(201).json({created: organization})
         } catch(err) {
-            if(err instanceof error) {
-                res.status(400).json({error: message})
+            if(err.code === 1) {
+                res.status(400).json({error: err.message})
             } else {
+                console.log(err)
                 res.status(400).json({error: 'unknown error'})
             }
         }
@@ -34,13 +36,13 @@ class ApiOrganization {
 
     async update(req, res) {
         try{
-            const {id} = req.params
+            const id = req.params.id
             const {field, value} = req.body
             const organization = {field, value} //await service.update(id ,field, value)
             res.status(201).json({organization})
         } catch(err) {
-             if(err instanceof error) {
-                res.status(400).json({error: message})
+             if(err.code === 1) {
+                res.status(400).json({error: err.message})
             } else {
                 res.status(400).json({error: 'unknown error'})
             }
@@ -49,16 +51,16 @@ class ApiOrganization {
 
     async delete(req, res) {
         try{
-            const {id} = req.params.id
+            const id = req.params.id
             const organization = await service.delete(id)
-            res.status(201).json({organization})
+            res.status(200).json({organization})
         } catch(err) {
-            if(err) {
-                res.status(400).json({error: err.message})
-            } else {
-                res.status(400).json({error: 'unknown error'})
-            }
-        }
+            if(err.code === 1) {
+               res.status(400).json({error: err.message})
+           } else {
+               res.status(400).json({error: 'unknown error'})
+           }
+       }
     }
 }
 

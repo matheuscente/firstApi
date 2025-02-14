@@ -3,7 +3,7 @@ class ApiMovement {
     async findAll(req, res) {
         try {
             const organizationId = 1
-            const {inventoryId} = req.params
+            const inventoryId = req.params.id
             const movements = [{}] // await service.findAll(organizationId, inventoryId)
             res.status(200).json(movements)
         } catch(error) {
@@ -26,7 +26,7 @@ class ApiMovement {
     async create(req, res) {
         try {
             const userId = 1
-            const {inventoryId} = req.params
+            const inventoryId = req.params.id
             const {amount, typeMoviment, productId} = req.body
             const movement = {} //await service.create(userId, inventoryId, ProductId, amount, typeMoviment)
             res.status(201).json({created: movement})
