@@ -9,12 +9,12 @@ const route = express.Router()
 route.get('/admin',  controller.findAll)
 route.get('/admin/:id',  controller.findOne)
 route.post('/admin',  controller.create)
-route.put('/admin/:id',  controller.update)
+route.patch('/admin/:id',  controller.update)
 route.delete('/admin/:id',  controller.delete)
 
 //user options 
 route.get('/',  controller.findOne)
-route.put('/',  controller.update)
+route.patch('/',  controller.update)
 
 
 

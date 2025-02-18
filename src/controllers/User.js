@@ -1,37 +1,52 @@
+const service = require("../services/User.js")
+
 class ApiUser {
 
     async findAll(req, res) {
         try {
-            const organizationId = 1
-            const users = [{}] // await service.findAll()
+            const organizationId = 6
+            const users = await service.findAll(organizationId)
             res.status(200).json(users)
         } catch(error) {
-            res.status(400).json({error: error})
+            if(error.code === 1) {
+            res.status(400).json({error: error.message})
+            } else {
+                res.status(400).json({error: "unknown error"})
+            }
         }
     }
 
     async findOne(req, res) {
         try {
-            const organizationId = 1
+            const organizationId = 6
             const id = req.params.id
-            const user = {id} // await service.findOne(id)
+            const user = await service.findOne(id, organizationId)
             res.status(200).json(user)
         } catch(error) {
-            res.status(400).json({error: error})
+            if(error.code === 1) {
+            res.status(400).json({error: error.message})
+            } else {
+                res.status(400).json({error: "unknown error"})
+            }
         }
-
     }
 
     async create(req, res) {
         try {
             const organizationId = 1
             const {name, email, password, role} = req.body
-            const user = {name, email, password, role} //await service.create(name, email, password, role, organizationId)
+            const user = await service.create(organizationId, name, email, password, role)
             res.status(201).json({created: user})
-        } catch(error) {
-            res.status(400).json({error: error})
+        } catch(err) {
+            if(err.code === 1) {
+                res.status(400).json({error: err.message})
+            } else if(err.name === "SequelizeUniqueConstraintError") {
+                res.status(400).json({error: `Please send another ${err.errors[0].path}`})
+            } else {
+                console.log(err)
+                res.status(400).json({error: `unknown error`})
+            }
         }
-
     }
 
     async update(req, res) {
@@ -39,10 +54,17 @@ class ApiUser {
             const organizationId = 1
             const id = req.params.id
             const {field, value} = req.body
-            const user = {} //await service.update(id ,field, value)
+            const user = await service.update(organizationId,id ,field, value)
             res.status(201).json({user})
-        } catch(error) {
-            res.status(400).json({error: error})
+        } catch(err) {
+            if(err.code === 1) {
+                res.status(400).json({error: err.message})
+            } else if(err.name === "SequelizeUniqueConstraintError") {
+                res.status(400).json({error: `Please send another ${err.errors[0].path}`})
+            } else {
+                console.log(err)
+                res.status(400).json({error: `unknown error`})
+            }
         }
     }
 
@@ -50,10 +72,15 @@ class ApiUser {
         try{
             const organizationId = 1
             const id = req.params.id
-            const user = {} //await service.delete(id)
+            const user = await service.delete(organizationId, id)
             res.status(201).json({user})
-        } catch(error) {
-            res.status(400).json({error: error})
+        } catch(err) {
+            if(err.code === 1) {
+                res.status(400).json({error: err.message})
+            }else {
+                console.log(err)
+                res.status(400).json({error: `unknown error`})
+            }
         }
     }
 }

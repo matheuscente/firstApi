@@ -7,12 +7,13 @@ class ApiOrganization {
             const organization =  await service.findOne(id)
             res.status(200).json(organization)
         } catch(err) {
-            console.log(err)
+            console.log(err.name)
             if(err.code === 1) {
                 res.status(400).json({error: err.message})
 
             } else {
-                res.status(400).json({error: 'unknown error'})
+                console.log(err)
+                res.status(400).json({error: `unknown error`})
             }
         }
 
@@ -26,9 +27,11 @@ class ApiOrganization {
         } catch(err) {
             if(err.code === 1) {
                 res.status(400).json({error: err.message})
+            } else if(err.name === "SequelizeUniqueConstraintError") {
+                res.status(400).json({error: `Please send another ${err.errors[0].path}`})
             } else {
                 console.log(err)
-                res.status(400).json({error: 'unknown error'})
+                res.status(400).json({error: `unknown error`})
             }
         }
 
@@ -38,12 +41,17 @@ class ApiOrganization {
         try{
             const id = req.params.id
             const {field, value} = req.body
-            const organization = {field, value} //await service.update(id ,field, value)
+            const organization = await service.update(id ,field, value)
             res.status(201).json({organization})
         } catch(err) {
              if(err.code === 1) {
                 res.status(400).json({error: err.message})
-            } else {
+
+            }  else if(err.name === "SequelizeUniqueConstraintError") {
+                res.status(400).json({error: `Please send another ${err.errors[0].path}`})
+            }
+
+             else {
                 res.status(400).json({error: 'unknown error'})
             }
         }

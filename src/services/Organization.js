@@ -1,21 +1,17 @@
 
 const model = require('../models/Organization.js')
+const error = require("./error.js")
 
 class ServiceOrganization {
+    
     async findOne(id) {
         if(!id || isNaN(id))  {
-            const error = new Error('id incorrect')
-            error.code = 1
-            throw error
+            throw error('id incorrect')
         } 
         const organization =  await model.findByPk(id)
 
         if(!organization) {
-            const error = new Error('no organization in this id')
-            error.code = 1
-            throw error
-            
-            
+            throw error('no organization in this id')
         }
         return organization
     }
@@ -29,20 +25,32 @@ class ServiceOrganization {
         }
         for(const fieldName in fields) {
             if(!fields[fieldName]) {
-                const error = new Error(`${fieldName} invalid or not provided`)
-                error.code = 1
-                throw error
+                throw error(`${fieldName} invalid or not provided`)
+
+                
             }
         }
         return await model.create({name, address, phone, email})
     }
 
+    async update(id, field, value) {
+        const organization = await this.findOne(id)
+        if(!organization) {
+            throw error('no organizations in this id')
+        }
+        else if(field === "id") {
+            throw error('changing the id is not allowed')
+        } 
+        organization[field] = value
+        await organization.save()
+        return this.findOne(id)
+    }
+
 
 async delete(id) {
     if(!id || isNaN(id))  {
-        const error = new Error('Invalid or not provided ID.')
-        error.code = 1
-        throw error 
+        throw error('Invalid or not provided ID.')
+        
     }
     const organization = await this.findOne(id)
     return await organization.destroy()
