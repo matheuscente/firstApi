@@ -26,8 +26,6 @@ class ServiceOrganization {
         for(const fieldName in fields) {
             if(!fields[fieldName]) {
                 throw error(`${fieldName} invalid or not provided`)
-
-                
             }
         }
         return await model.create({name, address, phone, email})

@@ -3,7 +3,7 @@ const organization = require("./Organization.js")
 
 class User {
     constructor() {
-        this.model = database.db.define("product", {
+        this.model = database.db.define("user", {
             id: {
                 type: database.db.Sequelize.INTEGER,
                 autoIncrement: true,

@@ -4,13 +4,14 @@ class ApiUser {
 
     async findAll(req, res) {
         try {
-            const organizationId = 6
+            const organizationId = 1
             const users = await service.findAll(organizationId)
             res.status(200).json(users)
         } catch(error) {
             if(error.code === 1) {
             res.status(400).json({error: error.message})
             } else {
+                console.log(error)
                 res.status(400).json({error: "unknown error"})
             }
         }
@@ -18,7 +19,7 @@ class ApiUser {
 
     async findOne(req, res) {
         try {
-            const organizationId = 6
+            const organizationId = 1
             const id = req.params.id
             const user = await service.findOne(id, organizationId)
             res.status(200).json(user)
@@ -26,6 +27,7 @@ class ApiUser {
             if(error.code === 1) {
             res.status(400).json({error: error.message})
             } else {
+                console.log(error)
                 res.status(400).json({error: "unknown error"})
             }
         }

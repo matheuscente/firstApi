@@ -1,4 +1,5 @@
 const serviceOrganization = require('./Organization.js')
+const modelOrganization = require('../models/Organization.js')
 const error = require('./error.js')
 const modelUser = require('../models/User.js')
 const bcrypt = require("bcrypt")
@@ -19,40 +20,64 @@ class ServiceUser{
             throw error("This organization does not exist")
         }
 
-        const users = await modelUser.findAll({where: organizationId})
+        const users = await modelUser.findAll({where: {organizationId}})
 
         if(!users) {
             throw error('no have users in this organization')
         }
-        return users
+
+        const returnUsers = JSON.parse(JSON.stringify(users))
+        for(const user in returnUsers) {
+            delete returnUsers[user].password
+        }
+        return returnUsers
     }
 
-    async findOne(organizationId, id) {
+    async findOne(id, organizationId) {
         if(!this.verifyOrganization(organizationId)) {
             throw error("This organization does not exist")
         }
 
-        const user = modelUser.findOne({where: {organizationId, id}})
+        const user = await modelUser.findOne({where: {organizationId, id},
+        include:  modelOrganization})
 
         if(!user) {
             throw error('no user with this id in this organization')
         }
+
+            const returnUser = JSON.parse(JSON.stringify(user))
+            delete returnUser.password
+            return returnUser
     }
 
     async create(organizationId, name, email, password, role) {
-        console.log(salt)
+        const objVerify = {
+            organizationId: organizationId,
+            name: name,
+            email: email,
+            password: password,
+            role: role
+        }
+
+        for(const item in objVerify) {
+            if(!objVerify[item]) {
+                throw error(`please give a ${item}`)
+            }
+        }
+
         const hashedPass = await bcrypt.hash(password, salt)
         if(!this.verifyOrganization(organizationId)) {
             throw error("this organization don't exists")
         } 
 
-        else if(role !== "admin" || role !== "employee") {
+        else if(role !== "admin" && role !== "employee") {
             throw error("invalid employee")
         }
+        const user = await modelUser.create({organizationId, name, email, password: hashedPass, role})
 
-        const user = await modelUser.create({organizationId, name, email, hashedPass, role})
-
-        return user
+        const returnUser = JSON.parse(JSON.stringify(user))
+        delete returnUser.password
+        return returnUser
     }
 
     async update(organizationId,id ,field, value) {
@@ -60,26 +85,55 @@ class ServiceUser{
             throw error("this organization don't exists")
         }
 
-        else if(field === "organizationId" || field === "id" ) {
-            throw error('change not allowed')
-        }
+       
 
-        const user = await this.findOne(organizationId, id)
+        const user = await modelUser.findOne({where:{organizationId, id}})
 
         if(!user) {
             throw error("this user don't exists")
         }
 
-        if(field === "password") {
-            const hashedPass = bcrypt.hash(value, salt)
-            user.password = hashedPass
-            await user.save()
+        switch(field) {
+            case "name":
+                user.name = value
+                break;
+            
+            case "email":
+                user.email = value
+                break;
+            
+            case "role":
+                if(user.role === "employee" && value === "admin") {
+                    throw error("change not allowed")
+                }
+                if(value !== "admin" && value !== "employee") {
+                    throw error("invalid role")
+                }
+                user.role = value
+                break;
+
+            case "password":
+                const hashedPass = await bcrypt.hash(value, salt)
+                user.password = hashedPass
+                break;
+
+            case "organizationId":
+                throw error('change not allowed')
+            
+            
+            case "id":
+                throw error('change not allowed')
+            
+            default: 
+                throw error('invalid field for modify or not provided')
+
         }
 
-        user[field] = value
-        user.save()
+        await user.save()
 
-        return this.findOne(organizationId, id)
+        const returnUser = JSON.parse(JSON.stringify(user))
+        delete returnUser.password
+        return returnUser
     }
 
     async delete(organizationId, id) {
@@ -87,13 +141,16 @@ class ServiceUser{
             throw error("this organization don't exists")
         }
 
-        const user = await his.findOne(organizationId, id)
+        const user = await modelUser.findOne({where: {organizationId, id}})
 
         if(!user) {
             throw error("this user don't exists")
         }
 
-        return user.destroy()
+        const returnUser = JSON.parse(JSON.stringify(user))
+        delete returnUser.password
+        await user.destroy()
+        return returnUser
 
     }
 }
