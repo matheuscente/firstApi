@@ -12,7 +12,7 @@ class ServiceUser{
         await serviceOrganization.verifyOrganization(organizationId)
         const users = await modelUser.findAll({where: {organizationId}})
 
-        if(!users) {
+        if(users.length === 0) {
             throw error('no have users in this organization')
         }
 

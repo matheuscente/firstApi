@@ -7,7 +7,12 @@ class ApiMovement {
             const movements = [{}] // await service.findAll(organizationId, inventoryId)
             res.status(200).json(movements)
         } catch(error) {
-            res.status(400).json({error: error})
+            if(error.code === 1 ) {
+                res.status(400).json({error: error.message})
+            } else {
+                console.log(error)
+                res.status(400).json({error: "unknown error"})
+            }
         }
     }
 
@@ -18,7 +23,12 @@ class ApiMovement {
             const movement = {} // await service.findOne(id, organizationId, inventoryId)
             res.status(200).json(movement)
         } catch(error) {
-            res.status(400).json({error: error})
+            if(error.code === 1 ) {
+                res.status(400).json({error: error.message})
+            } else {
+                console.log(error)
+                res.status(400).json({error: "unknown error"})
+            }
         }
 
     }
@@ -31,7 +41,12 @@ class ApiMovement {
             const movement = {} //await service.create(userId, inventoryId, ProductId, amount, typeMoviment)
             res.status(201).json({created: movement})
         } catch(error) {
-            res.status(400).json({error: error})
+            if(error.code === 1 ) {
+                res.status(400).json({error: error.message})
+            } else {
+                console.log(error)
+                res.status(400).json({error: "unknown error"})
+            }
         }
 
     }
@@ -43,7 +58,12 @@ class ApiMovement {
             const movement = {} //await service.update(id ,inventoryId, field, value)
             res.status(201).json({movement})
         } catch(error) {
-            res.status(400).json({error: error})
+            if(error.code === 1 ) {
+                res.status(400).json({error: error.message})
+            } else {
+                console.log(error)
+                res.status(400).json({error: "unknown error"})
+            }
         }
     }
 
@@ -53,7 +73,12 @@ class ApiMovement {
             const movement = {} //await service.delete(id, inventoryId)
             res.status(201).json({movement})
         } catch(error) {
-            res.status(400).json({error: error})
+            if(error.code === 1 ) {
+                res.status(400).json({error: error.message})
+            } else {
+                console.log(error)
+                res.status(400).json({error: "unknown error"})
+            }
         }
     }
 }
