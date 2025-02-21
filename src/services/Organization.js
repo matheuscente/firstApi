@@ -3,6 +3,13 @@ const model = require('../models/Organization.js')
 const error = require("./error.js")
 
 class ServiceOrganization {
+
+    async verifyOrganization(id) {
+        const organization = await this.findOne(id)
+        if(!organization) {
+            throw error('no organization in this id')
+        }
+    }
     
     async findOne(id) {
         if(!id || isNaN(id))  {

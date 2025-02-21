@@ -3,7 +3,7 @@ class ApiInventory {
     async findAll(req, res) {
         try {
             const organizationId = 1
-            const inventories = [{}]// await service.findAll(organizationId)
+            const inventories = await service.findAll(organizationId)
             res.status(200).json(inventories)
         } catch(error) {
             res.status(400).json({error: error})
@@ -13,7 +13,7 @@ class ApiInventory {
         try {
             const organizationId = 1
             const id = req.params.id
-            const inventory = {} // await service.findOne(id)
+            const inventory = await service.findOne(organizationId, id)
             res.status(200).json(inventory)
         } catch(error) {
             res.status(400).json({error: error})

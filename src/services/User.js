@@ -7,19 +7,9 @@ require('dotenv').config('./config.env')
 
 const salt = 10
 class ServiceUser{
-    async verifyOrganization(id) {
-        const organization = await serviceOrganization.findOne(id)
-        if(!organization) {
-            return false
-        }
-        return true
-    }
 
     async findAll(organizationId) {
-        if(!this.verifyOrganization(organizationId)) {
-            throw error("This organization does not exist")
-        }
-
+        await serviceOrganization.verifyOrganization(organizationId)
         const users = await modelUser.findAll({where: {organizationId}})
 
         if(!users) {
@@ -34,9 +24,7 @@ class ServiceUser{
     }
 
     async findOne(id, organizationId) {
-        if(!this.verifyOrganization(organizationId)) {
-            throw error("This organization does not exist")
-        }
+        await serviceOrganization.verifyOrganization(organizationId)
 
         const user = await modelUser.findOne({where: {organizationId, id},
         include:  modelOrganization})
@@ -51,6 +39,9 @@ class ServiceUser{
     }
 
     async create(organizationId, name, email, password, role) {
+
+        await serviceOrganization.verifyOrganization(organizationId)
+
         const objVerify = {
             organizationId: organizationId,
             name: name,
@@ -66,11 +57,8 @@ class ServiceUser{
         }
 
         const hashedPass = await bcrypt.hash(password, salt)
-        if(!this.verifyOrganization(organizationId)) {
-            throw error("this organization don't exists")
-        } 
 
-        else if(role !== "admin" && role !== "employee") {
+        if(role !== "admin" && role !== "employee") {
             throw error("invalid employee")
         }
         const user = await modelUser.create({organizationId, name, email, password: hashedPass, role})
@@ -81,11 +69,8 @@ class ServiceUser{
     }
 
     async update(organizationId,id ,field, value) {
-        if(!this.verifyOrganization(organizationId)) {
-            throw error("this organization don't exists")
-        }
-
-       
+        
+        await serviceOrganization.verifyOrganization(organizationId)
 
         const user = await modelUser.findOne({where:{organizationId, id}})
 
@@ -137,9 +122,7 @@ class ServiceUser{
     }
 
     async delete(organizationId, id) {
-        if(!this.verifyOrganization(organizationId)) {
-            throw error("this organization don't exists")
-        }
+        await serviceOrganization.verifyOrganization(organizationId)
 
         const user = await modelUser.findOne({where: {organizationId, id}})
 
