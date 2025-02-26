@@ -4,11 +4,11 @@ const serviceOrganization = require('./Organization.js')
 
 class ServiceProduct {
     
-    async findAll(oganizationId) {
+    async findAll(organizationId) {
+        console.log(organizationId)
+        await serviceOrganization.verifyOrganization(organizationId)
 
-        await serviceOrganization.verifyOrganization(oganizationId)
-
-        const products = await modelProduct.findAll({where: oganizationId})
+        const products = await modelProduct.findAll({where: {organizationId}})
 
         if(products.length === 0) {
             throw error('no products in this organization')
@@ -17,10 +17,10 @@ class ServiceProduct {
         return products
     }
 
-    async findOne(oganizationId, id) {
-        await serviceOrganization.verifyOrganization(oganizationId)
+    async findOne(organizationId, id) {
+        await serviceOrganization.verifyOrganization(organizationId)
 
-        const product = await modelProduct.findOne({where: {oganizationId, id}})
+        const product = await modelProduct.findOne({where: {organizationId, id}})
 
         if(!product) {
             throw error("no products with this id in this organization")
@@ -29,8 +29,8 @@ class ServiceProduct {
         return product
     }
 
-    async create(oganizationId,name, description) {
-        await serviceOrganization.verifyOrganization(oganizationId)
+    async create(organizationId,name, description) {
+        await serviceOrganization.verifyOrganization(organizationId)
 
         if(!name) {
             throw error('invalid name or not provided')
@@ -38,13 +38,13 @@ class ServiceProduct {
             throw error('invalid description or not provided')
         }
 
-        const product = await modelProduct.create({oganizationId, name, description})
+        const product = await modelProduct.create({name, description, organizationId})
 
         return product
     }
 
-    async update(oganizationId, id, field, value) {
-        await serviceOrganization.verifyOrganization(oganizationId)
+    async update(organizationId, id, field, value) {
+        await serviceOrganization.verifyOrganization(organizationId)
 
         if(!field) {
             throw error("provide a field to change!")
@@ -52,7 +52,7 @@ class ServiceProduct {
             throw error("no value to change!")
         }
 
-        const product = await this.findOne(oganizationId, id)
+        const product = await this.findOne(organizationId, id)
 
         if(!product) {
             throw error('no products in this id')
@@ -66,19 +66,22 @@ class ServiceProduct {
             case "description":
                 product.description = value
                 break
+
+            default: 
+            throw error('field not valid')
         }
 
         return product.save()
 
     } 
     
-    async delete(oganizationId, id) {
-        await serviceOrganization.verifyOrganization(oganizationId)
+    async delete(organizationId, id) {
+        await serviceOrganization.verifyOrganization(organizationId)
 
-        const product = await this.findOne(oganizationId, id)
+        const product = await this.findOne(organizationId, id)
 
         if(!product) {
-            throw error('no inveentories in this id')
+            throw error('no products in this id')
         }
 
         return product.destroy()
