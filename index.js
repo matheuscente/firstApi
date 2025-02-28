@@ -21,7 +21,7 @@ app.post('/api/vi/login', () => {
 app.use('/api/v1/inventory', routeInventory)
 app.use('/api/v1/organization', routeOrganization)
 app.use('/api/v1/product', routeProduct)
-app.use('/api/v1/inventoryoMovement', routeMovement)
+app.use('/api/v1/inventoryMovement', routeMovement)
 app.use('/api/v1/user', routeUser)
 
 database.db

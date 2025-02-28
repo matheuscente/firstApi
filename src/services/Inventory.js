@@ -8,7 +8,7 @@ class ServiceInventory {
 
         await serviceOrganization.verifyOrganization(organizationId)
 
-        const inventories = await modelInventory.findAll({where: organizationId})
+        const inventories = await modelInventory.findAll({where: {organizationId}})
 
         if(inventories.length === 0) {
             throw error('no inventories in this organization')

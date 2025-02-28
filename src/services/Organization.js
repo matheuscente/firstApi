@@ -5,6 +5,7 @@ const error = require("./error.js")
 class ServiceOrganization {
 
     async verifyOrganization(id) {
+        console.log('fct ', id)
         const organization = await this.findOne(id)
         if(!organization) {
             throw error('no organization in this id')

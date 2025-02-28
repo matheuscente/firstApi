@@ -13,7 +13,7 @@ route.patch('/admin/:id',  controller.update)
 route.delete('/admin/:id',  controller.delete)
 
 //user options 
-route.get('/',  controller.findOne)
+route.get('/:id',  controller.findOne)
 route.patch('/',  controller.update)
 
 

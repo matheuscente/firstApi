@@ -1,5 +1,5 @@
 const error = require('./error.js')
-const modelProduct = require('..//models/product.js')
+const modelProduct = require('../models/Product.js')
 const serviceOrganization = require('./Organization.js')
 
 class ServiceProduct {

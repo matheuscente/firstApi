@@ -23,8 +23,12 @@ class ServiceUser{
         return returnUsers
     }
 
-    async findOne(id, organizationId) {
+    async findOne(organizationId,id) {
         await serviceOrganization.verifyOrganization(organizationId)
+
+        if(!id || isNaN(id)) {
+            throw error('invalid userId')
+        }
 
         const user = await modelUser.findOne({where: {organizationId, id},
         include:  modelOrganization})

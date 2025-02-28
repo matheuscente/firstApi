@@ -2,6 +2,7 @@ const database = require("../DataBase.js")
 const user = require("./User.js")
 const product = require("./Product.js")
 const inventory = require("./Inventory.js")
+const orgnization = require("./Organization.js")
 
 class InventoryMovement {
     constructor() {
@@ -25,7 +26,8 @@ class InventoryMovement {
                 type: database.db.Sequelize.INTEGER,
                 references: {
                     model: inventory,
-                    key: "id"},
+                    key: "id"
+                },
                     allowNull: false
                 },
 
@@ -33,7 +35,8 @@ class InventoryMovement {
                 type: database.db.Sequelize.INTEGER,
                 references: {
                     model: product,
-                    key: "id"},
+                    key: "id"
+                },
                     allowNull: false
                 },
 
@@ -44,16 +47,21 @@ class InventoryMovement {
 
             },
 
-            //this field define the movimentation type, what is 0 for exit and 1 for entry 
-                typeMovimentation: {
+            typeMoviment: {
+                type: database.db.Sequelize.STRING,
+                allowNull: false,
+            },
+
+            organizationId: {
                 type: database.db.Sequelize.INTEGER,
                 allowNull: false,
-                validate: {
-                    isInt: true,
-                    min: 0,
-                    max: 1
+                references: {
+                    model: orgnization,
+                    key: "id"
                 }
             }
+
+
         })
 
 
@@ -61,6 +69,7 @@ class InventoryMovement {
             user: 'userId',
             product: 'productId',
             inventory: 'inventoryId',
+            organization: 'organizationId'
           };
           
           for (const modelName in associations) {
