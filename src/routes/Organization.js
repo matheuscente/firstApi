@@ -1,11 +1,11 @@
-const express = require("express")
-const controller = require("../controllers/Organization.js")
+const express = require("express");
+const controller = require("../controllers/Organization.js");
 
-const route = express.Router()
+const route = express.Router();
 
-route.get('/:id',  controller.findOne)
-route.post('/',  controller.create)
-route.patch('/:id',  controller.update)
-route.delete('/:id',  controller.delete)
+route.get("/:id", controller.findOne);
+route.post("/", controller.create);
+route.patch("/:id", controller.update);
+route.delete("/:id", controller.delete);
 
-module.exports = route
+module.exports = route;

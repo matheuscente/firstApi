@@ -1,32 +1,27 @@
 function productsReturn(movements) {
-    const products = {}
-    movements.forEach(element => {
+  const products = {};
+  movements.forEach((element) => {
+    if (!products[element.product.id]) {
+      products[element.product.id] = {
+        id: element.product.id,
+        name: element.product.name,
+        amount: 0,
+      };
+    }
 
-        if(!products[element.product.id]) {
-            products[element.product.id] = {
-                id: element.product.id,
-                name: element.product.name,
-                amount: 0
-            }
-        }
+    const amountChange = products[element.product.id].amount;
+    if (element.typeMoviment === "entry") {
+      products[element.product.id].amount = amountChange + element.amount;
+    } else {
+      products[element.product.id].amount = amountChange - element.amount;
+    }
 
-        const amountChange = products[element.product.id].amount  
-        if(element.typeMoviment === "entry") {
-            products[element.product.id].amount = amountChange + element.amount
-        } else {
-            products[element.product.id].amount = amountChange - element.amount
-        }
+    if (products[element.product.id].amount === 0) {
+      delete products[element.product.id];
+    }
+  });
 
-        if(products[element.product.id].amount === 0) {
-            delete products[element.product.id]
-        }
-
-        
-      
-    });
-
-    return Object.values(products)
+  return Object.values(products);
 }
 
-module.exports = productsReturn
-
+module.exports = productsReturn;
