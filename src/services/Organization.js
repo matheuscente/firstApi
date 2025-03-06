@@ -1,6 +1,9 @@
 
 const model = require('../models/Organization.js')
+const serviceUser = require('./User.js')
 const error = require("../fns/error.js")
+const bcrypt = require('bcrypt')
+const randomicPass = require('../fns/randomicPass.js')
 
 class ServiceOrganization {
 
@@ -35,7 +38,19 @@ class ServiceOrganization {
                 throw error(`${fieldName} invalid or not provided`)
             }
         }
-        return await model.create({name, address, phone, email})
+
+        const organization = await model.create({name, address, phone, email})
+        const password = randomicPass()
+        const encryptedpass = await bcrypt.hash(password, 10)
+        
+        let admin = await serviceUser.create(organization.id, `Admin ${organization.name}`, email, encryptedpass, 'admin')
+        admin = JSON.parse(JSON.stringify(admin))
+
+        admin.password = password
+        delete admin.organization
+        delete admin.organizationId
+
+        return {...organization.dataValues, admin}
     }
 
     async update(id, field, value) {

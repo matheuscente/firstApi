@@ -14,7 +14,7 @@ route.delete('/admin/:id',  controller.delete)
 
 //user options 
 route.get('/:id',  controller.findOne)
-route.patch('/',  controller.update)
+route.patch('/:id',  controller.update)
 
 
 

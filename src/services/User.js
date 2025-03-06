@@ -29,7 +29,7 @@ class ServiceUser{
     }
 
     async findOne(organizationId,id) {
-        await serviceOrganization.verifyOrganization(organizationId)
+        await modelOrganization.findOne({where: {id: organizationId}})
 
         if(!id || isNaN(id)) {
             throw error('invalid userId')
@@ -49,7 +49,11 @@ class ServiceUser{
 
     async create(organizationId, name, email, password, role) {
 
-        await serviceOrganization.verifyOrganization(organizationId)
+        const organization = await modelOrganization.findOne({where: {id: organizationId}})
+
+        if(!organization) {
+            throw error('organization not found')
+        }
 
         const objVerify = {
             organizationId: organizationId,
@@ -67,7 +71,7 @@ class ServiceUser{
 
         const hashedPass = await bcrypt.hash(password, salt)
 
-        if(role !== "admin" && role !== "employee") {
+        if(!(role === "admin" || role === "employee")) {
             throw error("invalid role")
         }
         const user = await modelUser.create({organizationId, name, email, password: hashedPass, role})
@@ -103,7 +107,7 @@ class ServiceUser{
                 if(user.role === "employee" && value === "admin") {
                     throw error("change not allowed")
                 }
-                if(value !== "admin" && value !== "employee") {
+                if(!(value === "admin" || value === "employee")) {
                     throw error("invalid role")
                 }
                 user.role = value
