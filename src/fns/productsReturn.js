@@ -17,6 +17,10 @@ function productsReturn(movements) {
             products[element.product.id].amount = amountChange - element.amount
         }
 
+        if(products[element.product.id].amount === 0) {
+            delete products[element.product.id]
+        }
+
         
       
     });

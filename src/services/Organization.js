@@ -1,11 +1,10 @@
 
 const model = require('../models/Organization.js')
-const error = require("./error.js")
+const error = require("../fns/error.js")
 
 class ServiceOrganization {
 
     async verifyOrganization(id) {
-        console.log('fct ', id)
         const organization = await this.findOne(id)
         if(!organization) {
             throw error('no organization in this id')

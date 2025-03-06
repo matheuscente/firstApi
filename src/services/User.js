@@ -1,6 +1,6 @@
 const serviceOrganization = require('./Organization.js')
 const modelOrganization = require('../models/Organization.js')
-const error = require('./error.js')
+const error = require('../fns/error.js')
 const modelUser = require('../models/User.js')
 const bcrypt = require("bcrypt")
 require('dotenv').config('./config.env')

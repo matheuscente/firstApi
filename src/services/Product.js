@@ -1,4 +1,4 @@
-const error = require('./error.js')
+const error = require('../fns/error.js')
 const modelProduct = require('../models/Product.js')
 const modelOrganization = require('../models/Organization.js')
 const serviceOrganization = require('./Organization.js')
@@ -6,7 +6,6 @@ const serviceOrganization = require('./Organization.js')
 class ServiceProduct {
     
     async findAll(organizationId) {
-        console.log(organizationId)
         await serviceOrganization.verifyOrganization(organizationId)
 
         const products = await modelProduct.findAll({where: {organizationId}, include: modelOrganization})

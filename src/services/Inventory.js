@@ -1,4 +1,4 @@
-const error = require('./error.js')
+const error = require('../fns/error.js')
 const modelInventory = require('..//models/Inventory.js')
 const modelOrganization = require('../models/Organization.js')
 const serviceOrganization = require('./Organization.js')
@@ -21,12 +21,10 @@ class ServiceInventory {
         for(const inventory of inventories) {
             const movements = await serviceMovement.findAll(organizationId, inventory.id)
             const products = productsReturn(movements)
-            console.log(products)
+            const inventoryReturn = JSON.parse(JSON.stringify(inventory))
+            inventoryReturn.products = products
 
-            result.push({
-                inventory,
-                products
-            })
+            result.push(inventoryReturn)
         }
 
         
