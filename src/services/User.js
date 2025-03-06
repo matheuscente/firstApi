@@ -10,7 +10,12 @@ class ServiceUser{
 
     async findAll(organizationId) {
         await serviceOrganization.verifyOrganization(organizationId)
-        const users = await modelUser.findAll({where: {organizationId}})
+        const users = await modelUser.findAll(
+            {
+                where: {organizationId}, 
+                include: modelOrganization
+            }
+        )
 
         if(users.length === 0) {
             throw error('no have users in this organization')
@@ -63,13 +68,12 @@ class ServiceUser{
         const hashedPass = await bcrypt.hash(password, salt)
 
         if(role !== "admin" && role !== "employee") {
-            throw error("invalid employee")
+            throw error("invalid role")
         }
         const user = await modelUser.create({organizationId, name, email, password: hashedPass, role})
 
-        const returnUser = JSON.parse(JSON.stringify(user))
-        delete returnUser.password
-        return returnUser
+        
+        return this.findOne(user.organizationId, user.id)
     }
 
     async update(organizationId,id ,field, value) {
@@ -80,6 +84,10 @@ class ServiceUser{
 
         if(!user) {
             throw error("this user don't exists")
+        }
+
+        if(!value) {
+            throw error('please set a value to modify')
         }
 
         switch(field) {
@@ -120,15 +128,13 @@ class ServiceUser{
 
         await user.save()
 
-        const returnUser = JSON.parse(JSON.stringify(user))
-        delete returnUser.password
-        return returnUser
+        return this.findOne(organizationId, id)
     }
 
     async delete(organizationId, id) {
         await serviceOrganization.verifyOrganization(organizationId)
 
-        const user = await modelUser.findOne({where: {organizationId, id}})
+        const user = await modelUser.findOne({where: {organizationId, id}, include: modelOrganization})
 
         if(!user) {
             throw error("this user don't exists")
@@ -136,7 +142,7 @@ class ServiceUser{
 
         const returnUser = JSON.parse(JSON.stringify(user))
         delete returnUser.password
-        await user.destroy()
+        await user.destroy({include: modelOrganization})
         return returnUser
 
     }

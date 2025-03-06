@@ -1,5 +1,6 @@
 const service = require('../services/Inventory.js')
 
+
 class ApiInventory {
 
     async findAll(req, res) {

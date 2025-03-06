@@ -1,5 +1,6 @@
 const error = require('./error.js')
 const modelProduct = require('../models/Product.js')
+const modelOrganization = require('../models/Organization.js')
 const serviceOrganization = require('./Organization.js')
 
 class ServiceProduct {
@@ -8,7 +9,7 @@ class ServiceProduct {
         console.log(organizationId)
         await serviceOrganization.verifyOrganization(organizationId)
 
-        const products = await modelProduct.findAll({where: {organizationId}})
+        const products = await modelProduct.findAll({where: {organizationId}, include: modelOrganization})
 
         if(products.length === 0) {
             throw error('no products in this organization')
@@ -20,7 +21,7 @@ class ServiceProduct {
     async findOne(organizationId, id) {
         await serviceOrganization.verifyOrganization(organizationId)
 
-        const product = await modelProduct.findOne({where: {organizationId, id}})
+        const product = await modelProduct.findOne({where: {organizationId, id}, include: modelOrganization})
 
         if(!product) {
             throw error("no products with this id in this organization")
@@ -40,7 +41,7 @@ class ServiceProduct {
 
         const product = await modelProduct.create({name, description, organizationId})
 
-        return product
+        return this.findOne(product.organizationId, product.id)
     }
 
     async update(organizationId, id, field, value) {

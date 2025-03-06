@@ -1,32 +1,55 @@
 const error = require('./error.js')
 const modelInventory = require('..//models/Inventory.js')
+const modelOrganization = require('../models/Organization.js')
 const serviceOrganization = require('./Organization.js')
+const serviceMovement = require('./InventoryMovement.js')
+const productsReturn = require('../fns/productsReturn.js')
+
 
 class ServiceInventory {
     
     async findAll(organizationId) {
-
+        const result = []
         await serviceOrganization.verifyOrganization(organizationId)
 
-        const inventories = await modelInventory.findAll({where: {organizationId}})
+        const inventories = await modelInventory.findAll({where: {organizationId}, include: modelOrganization})
 
         if(inventories.length === 0) {
             throw error('no inventories in this organization')
         }
+
+        for(const inventory of inventories) {
+            const movements = await serviceMovement.findAll(organizationId, inventory.id)
+            const products = productsReturn(movements)
+            console.log(products)
+
+            result.push({
+                inventory,
+                products
+            })
+        }
+
         
-        return inventories
+
+        return result
     }
 
     async findOne(organizationId, id) {
         await serviceOrganization.verifyOrganization(organizationId)
 
-        const inventory = await modelInventory.findOne({where: {organizationId, id}})
+        const inventory = await modelInventory.findOne({where: {organizationId, id}, include: modelOrganization})
 
         if(!inventory) {
             throw error("no inventories with this id in this organization")
         }
 
-        return inventory
+        const movements = await serviceMovement.findAll(organizationId, inventory.id)
+
+        const products = productsReturn(movements)
+
+
+
+        return {...inventory.dataValues, products}
     }
 
     async create(organizationId,name) {
@@ -36,9 +59,9 @@ class ServiceInventory {
             throw error('invalid name or not provided')
         }
 
-        const inventory = modelInventory.create({name, organizationId})
+        const inventory = await modelInventory.create({name, organizationId})
 
-        return inventory
+        return this.findOne(inventory.organizationId, inventory.id)
     }
 
     async update(organizationId, id, newName) {

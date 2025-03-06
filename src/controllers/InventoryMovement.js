@@ -59,9 +59,10 @@ class ApiMovement {
 
   async update(req, res) {
     try {
+      const organizationId = 1
       const { id, inventoryId } = req.params;
       const { field, value } = req.body;
-      const movement = await service.update(id, inventoryId, field, value);
+      const movement = await service.update(organizationId, id, inventoryId, field, value);
       res.status(201).json({ movement });
     } catch (error) {
       if (error.code === 1) {
@@ -75,8 +76,9 @@ class ApiMovement {
 
   async delete(req, res) {
     try {
+      const organizationId = 1
       const { id, inventoryId } = req.params;
-      const movement = await service.delete(id, inventoryId);
+      const movement = await service.delete(organizationId,inventoryId, id);
       res.status(201).json({ movement });
     } catch (error) {
       if (error.code === 1) {

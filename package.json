@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "My first study api",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
     "dev": "node --watch index.js",
     "test": "jest"
