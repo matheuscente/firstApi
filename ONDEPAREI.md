@@ -1,0 +1,1 @@
+refatorar service do produto para ver se precisa do estoque
