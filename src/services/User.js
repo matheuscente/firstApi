@@ -1,12 +1,14 @@
-const serviceOrganization = require("./Organization.js");
 const modelOrganization = require("../models/Organization.js");
 const error = require("../fns/error.js");
 const modelUser = require("../models/User.js");
 const bcrypt = require("bcrypt");
 require("dotenv").config("./config.env");
 const verifyOrganization = require("../fns/verifyOrganization.js")
+const jwt = require('jsonwebtoken')
+require('dotenv').config('../config.env')
 
 const salt = 10;
+const key = process.env.JWT_KEY
 class ServiceUser {
   async findAll(organizationId) {
     await verifyOrganization(organizationId);
@@ -154,6 +156,34 @@ class ServiceUser {
     delete returnUser.password;
     await user.destroy({ include: modelOrganization });
     return returnUser;
+  }
+
+  async login(email, password) {
+    if(!email || !password) {
+      throw error('email or password not provided')
+    }
+    const user = await modelUser.findOne({where: {email}})
+
+    if(!user) {
+      throw error('invalid email or password')
+    }
+
+    const credentialsOk = await bcrypt.compare(password, user.password) 
+
+    if(!credentialsOk) {
+      throw error('invalid email or password')
+    }
+
+    return jwt.sign({
+      id: user.id,
+      organizationId: user.organizationId,
+      role: user.role
+    }, key, {expiresIn: 60 * 60})
+
+  }
+
+  async verify(id, role) {
+    return await modelUser.findOne({where: id, role})
   }
 }
 

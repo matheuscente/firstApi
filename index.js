@@ -5,6 +5,7 @@ const routeUser = require("./src/routes/User.js");
 const routeProduct = require("./src/routes/Product.js");
 const routeOrganization = require("./src/routes/Organization.js");
 const routeMovement = require("./src/routes/InventoryMovement.js");
+const apiUser = require('./src/controllers/User.js')
 require("dotenv").config({ path: "./config.env" });
 
 const port = process.env.LISTEN_PORT;
@@ -13,7 +14,7 @@ const app = express();
 app.use(express.json());
 
 //routes that don't need authentication
-app.post("/api/vi/login", () => {});
+app.post("/api/v1/login", apiUser.login);
 
 //routes that need authentication
 app.use("/api/v1/inventory", routeInventory);

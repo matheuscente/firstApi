@@ -1,7 +1,6 @@
 const error = require("../fns/error.js");
 const modelProduct = require("../models/Product.js");
 const modelOrganization = require("../models/Organization.js");
-const serviceOrganization = require("./Organization.js");
 const verifyOrganization = require("../fns/verifyOrganization.js");
 
 class ServiceProduct {

@@ -1,10 +1,11 @@
 const express = require("express");
 const controller = require("../controllers/User.js");
+const auth = require('../middleware/auth.js')
 
 const route = express.Router();
 
 // adm options
-route.get("/admin", controller.findAll);
+route.get("/admin", auth(), controller.findAll);
 route.get("/admin/:id", controller.findOne);
 route.post("/admin", controller.create);
 route.patch("/admin/:id", controller.update);

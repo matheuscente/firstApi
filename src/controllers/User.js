@@ -94,6 +94,23 @@ class ApiUser {
       }
     }
   }
+
+  async login(req, res) {
+    try {
+      const {email, password} = req.body
+
+      const token = await service.login(email, password)
+
+      res.status(200).json({token: token})
+    } catch(err) {
+        if (err.code === 1) {
+          res.status(400).json({ error: err.message });
+        } else {
+          console.log(err);
+          res.status(400).json({ error: `unknown error` });
+        }
+      }
+  }
 }
 
 module.exports = new ApiUser();
