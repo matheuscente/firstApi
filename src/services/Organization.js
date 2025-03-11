@@ -5,12 +5,7 @@ const bcrypt = require("bcrypt");
 const randomicPass = require("../fns/randomicPass.js");
 
 class ServiceOrganization {
-  async verifyOrganization(id) {
-    const organization = await this.findOne(id);
-    if (!organization) {
-      throw error("no organization in this id");
-    }
-  }
+
 
   async findOne(id) {
     if (!id || isNaN(id)) {

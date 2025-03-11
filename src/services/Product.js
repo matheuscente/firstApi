@@ -2,10 +2,11 @@ const error = require("../fns/error.js");
 const modelProduct = require("../models/Product.js");
 const modelOrganization = require("../models/Organization.js");
 const serviceOrganization = require("./Organization.js");
+const verifyOrganization = require("../fns/verifyOrganization.js");
 
 class ServiceProduct {
   async findAll(organizationId) {
-    await serviceOrganization.verifyOrganization(organizationId);
+    await verifyOrganization(organizationId);
 
     const products = await modelProduct.findAll({
       where: { organizationId },
@@ -20,7 +21,7 @@ class ServiceProduct {
   }
 
   async findOne(organizationId, id) {
-    await serviceOrganization.verifyOrganization(organizationId);
+    await verifyOrganization(organizationId);
 
     const product = await modelProduct.findOne({
       where: { organizationId, id },
@@ -35,7 +36,7 @@ class ServiceProduct {
   }
 
   async create(organizationId, name, description) {
-    await serviceOrganization.verifyOrganization(organizationId);
+    await verifyOrganization(organizationId);
 
     if (!name) {
       throw error("invalid name or not provided");
@@ -53,7 +54,7 @@ class ServiceProduct {
   }
 
   async update(organizationId, id, field, value) {
-    await serviceOrganization.verifyOrganization(organizationId);
+    await verifyOrganization(organizationId);
 
     if (!field) {
       throw error("provide a field to change!");
@@ -84,7 +85,7 @@ class ServiceProduct {
   }
 
   async delete(organizationId, id) {
-    await serviceOrganization.verifyOrganization(organizationId);
+    await verifyOrganization(organizationId);
 
     const product = await this.findOne(organizationId, id);
 

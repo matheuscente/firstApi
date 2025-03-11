@@ -4,11 +4,12 @@ const error = require("../fns/error.js");
 const modelUser = require("../models/User.js");
 const bcrypt = require("bcrypt");
 require("dotenv").config("./config.env");
+const verifyOrganization = require("../fns/verifyOrganization.js")
 
 const salt = 10;
 class ServiceUser {
   async findAll(organizationId) {
-    await serviceOrganization.verifyOrganization(organizationId);
+    await verifyOrganization(organizationId);
     const users = await modelUser.findAll({
       where: { organizationId },
       include: modelOrganization,
@@ -86,7 +87,7 @@ class ServiceUser {
   }
 
   async update(organizationId, id, field, value) {
-    await serviceOrganization.verifyOrganization(organizationId);
+    await verifyOrganization(organizationId);
 
     const user = await modelUser.findOne({ where: { organizationId, id } });
 
@@ -138,7 +139,7 @@ class ServiceUser {
   }
 
   async delete(organizationId, id) {
-    await serviceOrganization.verifyOrganization(organizationId);
+    await verifyOrganization(organizationId);
 
     const user = await modelUser.findOne({
       where: { organizationId, id },

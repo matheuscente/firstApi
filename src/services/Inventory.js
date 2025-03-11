@@ -4,11 +4,12 @@ const modelOrganization = require("../models/Organization.js");
 const serviceOrganization = require("./Organization.js");
 const serviceMovement = require("./InventoryMovement.js");
 const productsReturn = require("../fns/productsReturn.js");
+const verifyOrganization = require("../fns/verifyOrganization.js");
 
 class ServiceInventory {
   async findAll(organizationId) {
     const result = [];
-    await serviceOrganization.verifyOrganization(organizationId);
+    await verifyOrganization(organizationId);
 
     const inventories = await modelInventory.findAll({
       where: { organizationId },
@@ -35,7 +36,7 @@ class ServiceInventory {
   }
 
   async findOne(organizationId, id) {
-    await serviceOrganization.verifyOrganization(organizationId);
+    await verifyOrganization(organizationId);
 
     const inventory = await modelInventory.findOne({
       where: { organizationId, id },
@@ -57,7 +58,7 @@ class ServiceInventory {
   }
 
   async create(organizationId, name) {
-    await serviceOrganization.verifyOrganization(organizationId);
+    await verifyOrganization(organizationId);
 
     if (!name) {
       throw error("invalid name or not provided");
@@ -69,7 +70,7 @@ class ServiceInventory {
   }
 
   async update(organizationId, id, newName) {
-    await serviceOrganization.verifyOrganization(organizationId);
+    await verifyOrganization(organizationId);
 
     if (!newName) {
       throw error("invalid name or not provided");
@@ -87,7 +88,7 @@ class ServiceInventory {
   }
 
   async delete(organizationId, id) {
-    await serviceOrganization.verifyOrganization(organizationId);
+    await verifyOrganization(organizationId);
 
     const inventory = await this.findOne(organizationId, id);
 
