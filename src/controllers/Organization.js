@@ -3,7 +3,7 @@ const service = require("../services/Organization.js");
 class ApiOrganization {
   async findOne(req, res) {
     try {
-      const id = req.params.id;
+      const id = req.session.organizationId;
       const organization = await service.findOne(id);
       res.status(200).json(organization);
     } catch (err) {
@@ -38,7 +38,7 @@ class ApiOrganization {
 
   async update(req, res) {
     try {
-      const id = req.params.id;
+      const id = req.session.organizationId;
       const { field, value } = req.body;
       const organization = await service.update(id, field, value);
       res.status(201).json({ organization });
@@ -57,7 +57,7 @@ class ApiOrganization {
 
   async delete(req, res) {
     try {
-      const id = req.params.id;
+      const id = req.session.organizationId;
       const organization = await service.delete(id);
       res.status(200).json({ organization });
     } catch (err) {

@@ -24,13 +24,13 @@ function auth(role) {
       // verifica se o usuario ainda e existe no banco e, se for passado uma role de autorização, se a role do token de sessão atual corresponde a role exigida
       //por exemplo, se a role passada no paramentro for admin, ele verifica se a role do token é admin
 
-      if (!verify || (role && role === decoded.role)) {
+
+      if (!verify || (role && role !== decoded.role)) {
         res.status(401).json({ error: "forgot permission" });
         return;
       }
 
       req.session = decoded
-      console.log(req.session)
 
       next()
     });

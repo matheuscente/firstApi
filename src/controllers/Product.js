@@ -3,7 +3,7 @@ const service = require("../services/Product.js");
 class ApiProduct {
   async findAll(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const products = await service.findAll(organizationId);
       res.status(200).json(products);
     } catch (error) {
@@ -18,7 +18,7 @@ class ApiProduct {
 
   async findOne(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const id = req.params.id;
       const product = await service.findOne(organizationId, id);
       res.status(200).json(product);
@@ -34,7 +34,7 @@ class ApiProduct {
 
   async create(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const { name, description } = req.body;
       const product = await service.create(organizationId, name, description);
       res.status(201).json({ created: product });
@@ -50,7 +50,7 @@ class ApiProduct {
 
   async update(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const id = req.params.id;
       const { field, value } = req.body;
 
@@ -68,7 +68,7 @@ class ApiProduct {
 
   async delete(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const id = req.params.id;
       const product = await service.delete(organizationId, id);
       res.status(201).json({ product });

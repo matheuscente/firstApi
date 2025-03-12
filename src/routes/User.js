@@ -5,14 +5,14 @@ const auth = require('../middleware/auth.js')
 const route = express.Router();
 
 // adm options
-route.get("/admin", auth(), controller.findAll);
-route.get("/admin/:id", controller.findOne);
-route.post("/admin", controller.create);
-route.patch("/admin/:id", controller.update);
-route.delete("/admin/:id", controller.delete);
+route.get("/admin", auth('admin'), controller.findAll);
+route.get("/admin/:id",auth('admin'), controller.findOne);
+route.post("/admin",auth('admin'), controller.create);
+route.patch("/admin/:id",auth('admin'), controller.update);
+route.delete("/admin/:id",auth('admin'), controller.delete);
 
 //user options
-route.get("/:id", controller.findOne);
-route.patch("/:id", controller.update);
+route.get("/info",auth(), controller.findOne);
+route.patch("/update",auth(), controller.update);
 
 module.exports = route;

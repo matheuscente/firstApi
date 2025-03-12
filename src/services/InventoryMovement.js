@@ -1,19 +1,15 @@
 const model = require("../models/InventoryMovement.js");
-const serviceOrganization = require("./Organization.js");
 const error = require("../fns/error.js");
 const serviceProduct = require('../services/Product.js')
 const serviceUser = require('../services/User.js')
-const serviceInventory = require('../services/Inventory.js')
 const modelOrganization = require('../models/Organization.js')
 const modelProduct = require('../models/Product.js')
 const modelUser = require('../models/User.js')
 const modelInventory = require('../models/Inventory.js');
-const productsReturn = require('../fns/productsReturn.js');
 const verifyOrganization = require("../fns/verifyOrganization.js");
 
 class InventoryMovement {
   async findAll(organizationId, inventoryId) {
-    console.log(inventoryId)
     await verifyOrganization(organizationId);
 
     const inventory = await modelInventory.findAll({where: {organizationId, id: inventoryId}})

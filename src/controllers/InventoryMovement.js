@@ -3,7 +3,7 @@ const service = require("../services/InventoryMovement.js");
 class ApiMovement {
   async findAll(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const inventoryId = req.params.inventoryId;
       const movements = await service.findAll(organizationId, inventoryId);
       res.status(200).json(movements);
@@ -19,7 +19,7 @@ class ApiMovement {
 
   async findOne(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const { id, inventoryId } = req.params;
       const movement = await service.findOne(id, organizationId, inventoryId);
       res.status(200).json(movement);
@@ -35,7 +35,7 @@ class ApiMovement {
 
   async create(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const inventoryId = req.params.inventoryId;
       const { userId, amount, typeMoviment, productId } = req.body;
       const movement = await service.create(
@@ -59,7 +59,7 @@ class ApiMovement {
 
   async update(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const { id, inventoryId } = req.params;
       const { field, value } = req.body;
       const movement = await service.update(
@@ -82,7 +82,7 @@ class ApiMovement {
 
   async delete(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const { id, inventoryId } = req.params;
       const movement = await service.delete(organizationId, inventoryId, id);
       res.status(201).json({ movement });

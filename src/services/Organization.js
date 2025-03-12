@@ -1,7 +1,6 @@
 const model = require("../models/Organization.js");
 const serviceUser = require("./User.js");
 const error = require("../fns/error.js");
-const bcrypt = require("bcrypt");
 const randomicPass = require("../fns/randomicPass.js");
 
 class ServiceOrganization {
@@ -33,14 +32,13 @@ class ServiceOrganization {
     }
 
     const organization = await model.create({ name, address, phone, email });
-    const password = randomicPass();
-    const encryptedpass = await bcrypt.hash(password, 10);
+    const password = randomicPass()
 
     let admin = await serviceUser.create(
       organization.id,
       `Admin ${organization.name}`,
       email,
-      encryptedpass,
+      password,
       "admin"
     );
     admin = JSON.parse(JSON.stringify(admin));

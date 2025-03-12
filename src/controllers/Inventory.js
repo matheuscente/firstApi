@@ -3,7 +3,7 @@ const service = require("../services/Inventory.js");
 class ApiInventory {
   async findAll(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const inventories = await service.findAll(organizationId);
       res.status(200).json(inventories);
     } catch (error) {
@@ -17,7 +17,7 @@ class ApiInventory {
   }
   async findOne(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const id = req.params.id;
       const inventory = await service.findOne(organizationId, id);
       res.status(200).json(inventory);
@@ -33,7 +33,7 @@ class ApiInventory {
 
   async create(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const { name } = req.body;
       const inventory = await service.create(organizationId, name);
       res.status(201).json({ created: inventory });
@@ -49,7 +49,7 @@ class ApiInventory {
 
   async update(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const id = req.params.id;
       const { name } = req.body;
       const inventory = await service.update(organizationId, id, name);
@@ -66,7 +66,7 @@ class ApiInventory {
 
   async delete(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const id = req.params.id;
       const inventory = await service.delete(organizationId, id);
       res.status(201).json({ inventory });

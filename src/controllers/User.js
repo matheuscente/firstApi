@@ -3,7 +3,7 @@ const service = require("../services/User.js");
 class ApiUser {
   async findAll(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const users = await service.findAll(organizationId);
       res.status(200).json(users);
     } catch (error) {
@@ -18,9 +18,13 @@ class ApiUser {
 
   async findOne(req, res) {
     try {
-      const organizationId = 1;
-      const id = req.params.id;
-      const user = await service.findOne(id, organizationId);
+      let id = req.params.id 
+
+      const {organizationId} = req.session;
+      if(req.route.path === "/info") {
+        id = req.session.id
+      }
+      const user = await service.findOne(organizationId, id);
       res.status(200).json(user);
     } catch (error) {
       if (error.code === 1) {
@@ -34,7 +38,7 @@ class ApiUser {
 
   async create(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const { name, email, password, role } = req.body;
       const user = await service.create(
         organizationId,
@@ -60,8 +64,12 @@ class ApiUser {
 
   async update(req, res) {
     try {
-      const organizationId = 1;
-      const id = req.params.id;
+      let id = req.params.id 
+
+      const {organizationId} = req.session;
+      if(req.route.path === "/update") {
+        id = req.session.id
+      }
       const { field, value } = req.body;
       const user = await service.update(organizationId, id, field, value);
       res.status(201).json({ user });
@@ -81,7 +89,7 @@ class ApiUser {
 
   async delete(req, res) {
     try {
-      const organizationId = 1;
+      const organizationId = req.session.organizationId
       const id = req.params.id;
       const user = await service.delete(organizationId, id);
       res.status(201).json({ user });

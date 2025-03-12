@@ -3,12 +3,12 @@ const error = require("../fns/error.js");
 const modelUser = require("../models/User.js");
 const bcrypt = require("bcrypt");
 require("dotenv").config("./config.env");
-const verifyOrganization = require("../fns/verifyOrganization.js")
-const jwt = require('jsonwebtoken')
-require('dotenv').config('../config.env')
+const verifyOrganization = require("../fns/verifyOrganization.js");
+const jwt = require("jsonwebtoken");
+require("dotenv").config("../config.env");
 
 const salt = 10;
-const key = process.env.JWT_KEY
+const key = process.env.JWT_KEY;
 class ServiceUser {
   async findAll(organizationId) {
     await verifyOrganization(organizationId);
@@ -34,7 +34,6 @@ class ServiceUser {
     if (!id || isNaN(id)) {
       throw error("invalid userId");
     }
-
     const user = await modelUser.findOne({
       where: { organizationId, id },
       include: modelOrganization,
@@ -104,11 +103,15 @@ class ServiceUser {
     switch (field) {
       case "name":
         user.name = value;
-        break;
+        await user.save();
+
+        return this.findOne(organizationId, id);
 
       case "email":
         user.email = value;
-        break;
+        await user.save();
+
+        return this.findOne(organizationId, id);
 
       case "role":
         if (user.role === "employee" && value === "admin") {
@@ -118,12 +121,26 @@ class ServiceUser {
           throw error("invalid role");
         }
         user.role = value;
-        break;
+        await user.save();
+
+        const token =  jwt.sign(
+          {
+            id: user.id,
+            organizationId: user.organizationId,
+            role: user.role,
+          },
+          key,
+          { expiresIn: 60 * 60 }
+        );
+
+        return ({user: await this.findOne(organizationId, id), newToken: token})
 
       case "password":
         const hashedPass = await bcrypt.hash(value, salt);
         user.password = hashedPass;
-        break;
+        await user.save();
+
+        return this.findOne(organizationId, id);
 
       case "organizationId":
         throw error("change not allowed");
@@ -134,10 +151,6 @@ class ServiceUser {
       default:
         throw error("invalid field for modify or not provided");
     }
-
-    await user.save();
-
-    return this.findOne(organizationId, id);
   }
 
   async delete(organizationId, id) {
@@ -159,31 +172,35 @@ class ServiceUser {
   }
 
   async login(email, password) {
-    if(!email || !password) {
-      throw error('email or password not provided')
+    if (!email || !password) {
+      throw error("email or password not provided");
     }
-    const user = await modelUser.findOne({where: {email}})
+    const user = await modelUser.findOne({ where: { email } });
 
-    if(!user) {
-      throw error('invalid email or password')
-    }
-
-    const credentialsOk = await bcrypt.compare(password, user.password) 
-
-    if(!credentialsOk) {
-      throw error('invalid email or password')
+    if (!user) {
+      throw error("invalid email or password");
     }
 
-    return jwt.sign({
-      id: user.id,
-      organizationId: user.organizationId,
-      role: user.role
-    }, key, {expiresIn: 60 * 60})
+    const credentialsOk = await bcrypt.compare(password, user.password);
 
+    if (!credentialsOk) {
+      throw error("invalid email or password");
+    }
+
+    return jwt.sign(
+      {
+        id: user.id,
+        organizationId: user.organizationId,
+        role: user.role,
+      },
+      key,
+      { expiresIn: 60 * 60 }
+    );
   }
 
   async verify(id, role) {
-    return await modelUser.findOne({where: id, role})
+    console.log(role);
+    return await modelUser.findOne({ where: { id, role } });
   }
 }
 
