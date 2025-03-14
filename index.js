@@ -5,6 +5,7 @@ const routeUser = require("./src/routes/User.js");
 const routeProduct = require("./src/routes/Product.js");
 const routeOrganization = require("./src/routes/Organization.js");
 const routeMovement = require("./src/routes/InventoryMovement.js");
+const routeSession = require("./src/routes/session.js")
 const apiUser = require('./src/controllers/User.js')
 require("dotenv").config({ path: "./config.env" });
 
@@ -17,6 +18,8 @@ app.use(express.json());
 app.post("/api/v1/login", apiUser.login);
 
 //routes that need authentication
+
+app.use("/api/v1/session")
 app.use("/api/v1/inventory", routeInventory);
 app.use("/api/v1/organization", routeOrganization);
 app.use("/api/v1/product", routeProduct);
@@ -24,7 +27,7 @@ app.use("/api/v1/inventoryMovement", routeMovement);
 app.use("/api/v1/user", routeUser);
 
 database.db
-  .sync({ force: false })
+  .sync({ force: true })
   .then(() => {
     app.listen(port, () => {
       console.info(`app running in ${port} port`);

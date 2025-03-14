@@ -14,5 +14,7 @@ route.delete("/admin/:id",auth('admin'), controller.delete);
 //user options
 route.get("/info",auth(), controller.findOne);
 route.patch("/update",auth(), controller.update);
+route.patch("/info",auth(), controller.findOne);
+
 
 module.exports = route;

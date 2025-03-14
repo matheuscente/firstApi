@@ -6,6 +6,8 @@ require("dotenv").config("./config.env");
 const verifyOrganization = require("../fns/verifyOrganization.js");
 const jwt = require("jsonwebtoken");
 require("dotenv").config("../config.env");
+const serviceToken = require("./token.js");
+
 
 const salt = 10;
 const key = process.env.JWT_KEY;
@@ -123,7 +125,7 @@ class ServiceUser {
         user.role = value;
         await user.save();
 
-        const token =  jwt.sign(
+        const token = jwt.sign(
           {
             id: user.id,
             organizationId: user.organizationId,
@@ -133,7 +135,10 @@ class ServiceUser {
           { expiresIn: 60 * 60 }
         );
 
-        return ({user: await this.findOne(organizationId, id), newToken: token})
+        return {
+          user: await this.findOne(organizationId, id),
+          newToken: token,
+        };
 
       case "password":
         const hashedPass = await bcrypt.hash(value, salt);
@@ -187,7 +192,7 @@ class ServiceUser {
       throw error("invalid email or password");
     }
 
-    return jwt.sign(
+    const token = jwt.sign(
       {
         id: user.id,
         organizationId: user.organizationId,
@@ -195,7 +200,11 @@ class ServiceUser {
       },
       key,
       { expiresIn: 60 * 60 }
-    );
+    )
+
+   const refreshToken = await serviceToken.add(user.id, token);
+
+    return refreshToken
   }
 
   async verify(id, role) {
