@@ -1,4 +1,5 @@
 const service = require("../services/User.js");
+const serviceSession = require('../services/session.js')
 
 class ApiUser {
   async findAll(req, res) {
@@ -119,6 +120,42 @@ class ApiUser {
         }
       }
   }
+
+  async logout(req, res) {
+    try {
+      const jwt = req.headers['authorization']
+      console.log(jwt)
+      const session = await service.logout(jwt)
+      res.status(200).json({session})
+    } catch(err) {
+      if (err.code === 1) {
+        res.status(400).json({ error: err.message });
+      } else {
+        console.log(err);
+        res.status(400).json({ error: `unknown error` });
+      }
+    }
+  }
+
+  async getNewJwt(req, res) {
+    console.log(req.session)
+   try {
+    const session = req.session
+    
+    const jwt = req.headers['authorization']
+    const {token} = req.body
+    const newJwt = await service.getNewJwt(jwt, token, session)
+    res.status(200).json({newJwt})
+   } catch(err) {
+    if (err.code === 1) {
+      res.status(400).json({ error: err.message });
+    } else {
+      console.log(err);
+      res.status(400).json({ error: `unknown error` });
+    }
+  }
+  }
+
 }
 
 module.exports = new ApiUser();

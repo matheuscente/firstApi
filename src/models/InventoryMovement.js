@@ -68,7 +68,6 @@ class InventoryMovement {
     };
 
     for (const modelName in associations) {
-      console.log(database.db.models);
       const foreignKey = associations[modelName];
       this.model.belongsTo(database.db.models[modelName], { foreignKey });
       database.db.models[modelName].hasMany(this.model);

@@ -15,6 +15,8 @@ route.delete("/admin/:id",auth('admin'), controller.delete);
 route.get("/info",auth(), controller.findOne);
 route.patch("/update",auth(), controller.update);
 route.patch("/info",auth(), controller.findOne);
+route.post("/logout", auth(), controller.logout)
+route.post("/newJwt", auth(), controller.getNewJwt)
 
 
 module.exports = route;

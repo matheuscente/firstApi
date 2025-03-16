@@ -5,7 +5,6 @@ const routeUser = require("./src/routes/User.js");
 const routeProduct = require("./src/routes/Product.js");
 const routeOrganization = require("./src/routes/Organization.js");
 const routeMovement = require("./src/routes/InventoryMovement.js");
-const routeSession = require("./src/routes/session.js")
 const apiUser = require('./src/controllers/User.js')
 require("dotenv").config({ path: "./config.env" });
 
@@ -19,7 +18,6 @@ app.post("/api/v1/login", apiUser.login);
 
 //routes that need authentication
 
-app.use("/api/v1/session")
 app.use("/api/v1/inventory", routeInventory);
 app.use("/api/v1/organization", routeOrganization);
 app.use("/api/v1/product", routeProduct);

@@ -2,16 +2,16 @@ const modelOrganization = require("../models/Organization.js");
 const error = require("../fns/error.js");
 const modelUser = require("../models/User.js");
 const bcrypt = require("bcrypt");
-require("dotenv").config("./config.env");
 const verifyOrganization = require("../fns/verifyOrganization.js");
 const jwt = require("jsonwebtoken");
-require("dotenv").config("../config.env");
-const serviceToken = require("./token.js");
+require("dotenv").config(".");
+const serviceToken = require("./refreshToken.js");
+const serviceSession = require('./session.js')
 
 
 const salt = 10;
 const key = process.env.JWT_KEY;
-class ServiceUser {
+class ServiceUser {   
   async findAll(organizationId) {
     await verifyOrganization(organizationId);
     const users = await modelUser.findAll({
@@ -183,15 +183,17 @@ class ServiceUser {
     const user = await modelUser.findOne({ where: { email } });
 
     if (!user) {
+
       throw error("invalid email or password");
+      
     }
 
     const credentialsOk = await bcrypt.compare(password, user.password);
-
+    
     if (!credentialsOk) {
       throw error("invalid email or password");
     }
-
+    
     const token = jwt.sign(
       {
         id: user.id,
@@ -202,13 +204,29 @@ class ServiceUser {
       { expiresIn: 60 * 60 }
     )
 
-   const refreshToken = await serviceToken.add(user.id, token);
+   const refreshToken = await serviceToken.createToken();
 
-    return refreshToken
+   await serviceSession.create(token, refreshToken[0].id, user.id)
+
+    return {token, refreshToken: refreshToken[1]}
   }
 
+  async logout(jwt) {
+    return serviceSession.changeValidateSession(jwt)
+  }
+
+  async getNewJwt(jwtToken, token, currentSession) {
+    const user = await this.findOne(currentSession.organizationId, currentSession.id)
+    if(!user){
+        throw error('user not found')
+    }
+    return await serviceSession.setJwt(jwtToken, token, user)
+    
+  }
+
+
+
   async verify(id, role) {
-    console.log(role);
     return await modelUser.findOne({ where: { id, role } });
   }
 }
