@@ -31,13 +31,4 @@ describe("token test", () => {
 
     })
 
-
-    it('check token validate', async () => {
-        const token = await service.createToken(this.transaction)
-        const isTokenValid = await service.isTokenValid(token[0].id, this.transaction)
-
-        expect(isTokenValid).toBe(true)
-    })
-
-
 })

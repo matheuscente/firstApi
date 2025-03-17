@@ -5,8 +5,7 @@ const error = require('../fns/error.js')
 const bcrypt = require('bcrypt')
 const generateJwt = require('jsonwebtoken')
 require("dotenv").config();
-
-const key = process.env.JWT_KEY
+const isTokenValid = require('../fns/isTokenValid.js')
 
 
 class Session {
@@ -70,6 +69,27 @@ class Session {
         const session = await modelSession.findOne({ where: { jwt }, transaction })
         session.isValid = false
         return session.save({ transaction })
+    }
+
+    async validateSession(jwt, transaction) {
+        const session = await this.findSession(jwt, transaction)
+        if(!session) {
+            throw error('session invalid')
+        }
+
+        const validadteToken = isTokenValid(session.token.createdAt)
+
+        if(!session.isValid) {
+            return false
+        }
+
+        if(!validadteToken) {
+            session.isValid = false
+            return false
+        }
+
+        return true
+
     }
 
 

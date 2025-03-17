@@ -16,27 +16,6 @@ class RefreshToken {
         return token
     }
 
-    async isTokenValid(tokenId, transaction) {
-        if(!tokenId) {
-            throw error('token not found')
-        }
-        const token = await this.findToken(tokenId, transaction)
-        if(!token) {
-            throw error('token not found')
-        }
-        let dataCreate = token.createdAt
-        const day = 86400000
-        let validate = day * 7
-        dataCreate = dataCreate.getTime()
-        validate = dataCreate + validate
-        const atualDate = new Date().getTime()
-
-        if(validate - atualDate <= 0 ) {
-            return false
-        }
-        return true
-    }
-
     async createToken(transaction) {
         const token = randomicPass()
         const hashedToken = await bcrypt.hash(token, 10)
