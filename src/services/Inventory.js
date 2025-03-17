@@ -6,14 +6,14 @@ const productsReturn = require("../fns/productsReturn.js");
 const verifyOrganization = require("../fns/verifyOrganization.js");
 
 class ServiceInventory {
-  async findAll(organizationId) {
+  async findAll(organizationId, transaction) {
     const result = [];
-    await verifyOrganization(organizationId);
+    await verifyOrganization(organizationId, transaction);
 
     const inventories = await modelInventory.findAll({
       where: { organizationId },
-      include: modelOrganization,
-    });
+      include: modelOrganization
+    ,  transaction });
 
     if (inventories.length === 0) {
       throw error("no inventories in this organization");
@@ -22,7 +22,8 @@ class ServiceInventory {
     for (const inventory of inventories) {
       const movements = await serviceMovement.findAll(
         organizationId,
-        inventory.id
+        inventory.id,
+        transaction
       );
       const products = productsReturn(movements);
       const inventoryReturn = JSON.parse(JSON.stringify(inventory));
@@ -34,13 +35,13 @@ class ServiceInventory {
     return result;
   }
 
-  async findOne(organizationId, id) {
-    await verifyOrganization(organizationId);
+  async findOne(organizationId, id, transaction) {
+    await verifyOrganization(organizationId, transaction);
 
     const inventory = await modelInventory.findOne({
       where: { organizationId, id },
       include: modelOrganization,
-    });
+     transaction });
 
     if (!inventory) {
       throw error("no inventories with this id in this organization");
@@ -48,7 +49,8 @@ class ServiceInventory {
 
     const movements = await serviceMovement.findAll(
       organizationId,
-      inventory.id
+      inventory.id,
+      transaction
     );
 
     const products = productsReturn(movements);
@@ -56,26 +58,26 @@ class ServiceInventory {
     return { ...inventory.dataValues, products };
   }
 
-  async create(organizationId, name) {
-    await verifyOrganization(organizationId);
+  async create(organizationId, name, transaction) {
+    await verifyOrganization(organizationId, transaction);
 
     if (!name) {
       throw error("invalid name or not provided");
     }
 
-    const inventory = await modelInventory.create({ name, organizationId });
+    const inventory = await modelInventory.create({ name, organizationId }, {transaction});
 
-    return this.findOne(inventory.organizationId, inventory.id);
+    return this.findOne(inventory.organizationId, inventory.id, transaction);
   }
 
-  async update(organizationId, id, newName) {
-    await verifyOrganization(organizationId);
+  async update(organizationId, id, newName, transaction) {
+    await verifyOrganization(organizationId, transaction);
 
     if (!newName) {
       throw error("invalid name or not provided");
     }
 
-    const inventory = await this.findOne(organizationId, id);
+    const inventory = await this.findOne(organizationId, id, transaction);
 
     if (!inventory) {
       throw error("no inventories in this id");
@@ -83,19 +85,19 @@ class ServiceInventory {
 
     inventory.name = newName;
 
-    return inventory.save();
+    return inventory.save({ transaction });
   }
 
-  async delete(organizationId, id) {
-    await verifyOrganization(organizationId);
+  async delete(organizationId, id, transaction) {
+    await verifyOrganization(organizationId, transaction);
 
-    const inventory = await this.findOne(organizationId, id);
+    const inventory = await this.findOne(organizationId, id, transaction);
 
     if (!inventory) {
       throw error("no inveentories in this id");
     }
 
-    return inventory.destroy();
+    return inventory.destroy({ transaction });
   }
 }
 

@@ -14,17 +14,17 @@ describe("token test", () => {
 
 
     it('achar token', async () => {
-        const token = await service.createToken(this.transaction)
-        const findToken = await service.findToken(token.id, this.transaction)
+        const token = await service.createToken(transaction)
 
-        expect(findToken.id).toBe(token.id)
-        expect(findToken.isValid).toBe(true)
+        const findToken = await service.findToken(token[0].id, transaction)
+        expect(findToken.id).toBe(token[0].id)
     })
 
     it('deletar token', async () => {
-        const token = await service.createToken(this.transaction)
-        const deletedToken = await service.deleteToken(token.id, this.transaction)
-        const findToken = service.findToken(deletedToken.id, this.transaction)
+        const token = await service.createToken(transaction)
+
+        const deletedToken = await service.deleteToken(token[0].id, transaction)
+        const findToken = service.findToken(deletedToken.id, transaction)
 
         await expect(findToken).rejects.toThrow('refresh Token not found or not provided')
 
@@ -32,12 +32,11 @@ describe("token test", () => {
     })
 
 
-    it('change token validate', async () => {
+    it('check token validate', async () => {
         const token = await service.createToken(this.transaction)
-        const newToken = await service.changeValidateToken(token.id, this.transaction)
+        const isTokenValid = await service.isTokenValid(token[0].id, this.transaction)
 
-        expect(newToken.isValid).toBe(false)
-
+        expect(isTokenValid).toBe(true)
     })
 
 

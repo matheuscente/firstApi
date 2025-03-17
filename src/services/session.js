@@ -1,5 +1,6 @@
 const modelSession = require('../models/session.js')
 const modelToken = require('../models/refreshToken.js')
+const serviceToken = require('./refreshToken.js')
 const error = require('../fns/error.js')
 const bcrypt = require('bcrypt')
 const generateJwt = require('jsonwebtoken')
@@ -10,57 +11,65 @@ const key = process.env.JWT_KEY
 
 class Session {
 
-    async create(jwt, refreshTokenId, userId) {
+    async create(jwt, refreshTokenId, userId, transaction) {
         const values = { jwt, refreshTokenId, userId };
         const undefinedKey = Object.keys(values).find(key => !values[key]);
 
         if (undefinedKey) {
             throw error(`${undefinedKey} not defined`)
         }
-        const session = await modelSession.create({ jwt, refreshTokenId, userId, isValid: true})
+        const session = await modelSession.create({ jwt, refreshTokenId, userId, isValid: true }, { transaction })
 
         return session
     }
 
-    async findSession(jwt) {
-        const session = await modelSession.findOne({where: {jwt}, include: modelToken})
+    async findSession(jwt, transaction) {
+        const session = await modelSession.findOne({ where: { jwt }, include: modelToken ,  transaction })
 
         return session
     }
 
-    async deleteSession(jwt) {
-        const session = await this.findSession(jwt)
-        return session.destroy()
+    async deleteSession(jwt, transaction) {
+        const session = await this.findSession(jwt, transaction)
+        return session.destroy(transaction)
     }
 
-    async setJwt(jwt, token, user) {
-        const session = await this.findSession(jwt)
+    async setToken(jwt, token, transaction) {
+        const session = await this.findSession(jwt, transaction)
         const refreshToken = session.refreshToken.token
-    const isTokenValid = await bcrypt.compare(token, refreshToken)
+        const isTokenValid = await bcrypt.compare(token, refreshToken)
 
-    if(!isTokenValid) {
-      throw error('invalid jwt or refresh token')
+        if (!isTokenValid) {
+            throw error('invalid jwt or refresh token')
+        }
+
+        const newToken = await serviceToken.createToken(transaction)
+        session.token = newToken[0].id
+        await session.save({ transaction })
+        return newToken[1]
     }
 
-    const newJwt = generateJwt.sign(
-      {
-        id: user.id,
-        organizationId: user.organizationId,
-        role: user.role,
-      },
-      key,
-      { expiresIn: 60 * 60 }
-    );
 
-    session.jwt = newJwt
-    await session.save()
-    return newJwt
+    async setJwt(jwt, token, user, transaction) {
+        const session = await this.findSession(jwt, transaction)
+        const refreshToken = session.refreshToken.token
+        const isTokenValid = await bcrypt.compare(token, refreshToken)
+
+        if (!isTokenValid) {
+            throw error('invalid jwt or refresh token')
+        }
+
+        const newJwt = generateJwt(user)
+
+        session.jwt = newJwt
+        await session.save({ transaction })
+        return newJwt
     }
 
-    async changeValidateSession(jwt) {
-        const session = await modelSession.findOne({where: {jwt}})
+    async changeValidateSession(jwt, transaction) {
+        const session = await modelSession.findOne({ where: { jwt }, transaction })
         session.isValid = false
-        return session.save()
+        return session.save({ transaction })
     }
 
 

@@ -3,21 +3,17 @@ const error = require("../fns/error.js");
 const modelUser = require("../models/User.js");
 const bcrypt = require("bcrypt");
 const verifyOrganization = require("../fns/verifyOrganization.js");
-const jwt = require("jsonwebtoken");
-require("dotenv").config(".");
 const serviceToken = require("./refreshToken.js");
 const serviceSession = require('./session.js')
-
+const generateJwt = require('../fns/generateJwt.js')
 
 const salt = 10;
-const key = process.env.JWT_KEY;
-class ServiceUser {   
-  async findAll(organizationId) {
-    await verifyOrganization(organizationId);
+class ServiceUser {
+  async findAll(organizationId, transaction) {
+    await verifyOrganization(organizationId, transaction);
     const users = await modelUser.findAll({
       where: { organizationId },
-      include: modelOrganization,
-    });
+      include: modelOrganization, transaction });
 
     if (users.length === 0) {
       throw error("no have users in this organization");
@@ -30,16 +26,15 @@ class ServiceUser {
     return returnUsers;
   }
 
-  async findOne(organizationId, id) {
-    await modelOrganization.findOne({ where: { id: organizationId } });
+  async findOne(organizationId, id, transaction) {
+    await modelOrganization.findOne({ where: { id: organizationId } ,  transaction });
 
     if (!id || isNaN(id)) {
       throw error("invalid userId");
     }
     const user = await modelUser.findOne({
       where: { organizationId, id },
-      include: modelOrganization,
-    });
+      include: modelOrganization,  transaction });
 
     if (!user) {
       throw error("no user with this id in this organization");
@@ -50,10 +45,10 @@ class ServiceUser {
     return returnUser;
   }
 
-  async create(organizationId, name, email, password, role) {
+  async create(organizationId, name, email, password, role, transaction) {
     const organization = await modelOrganization.findOne({
-      where: { id: organizationId },
-    });
+      where: { id: organizationId }
+  ,  transaction });
 
     if (!organization) {
       throw error("organization not found");
@@ -84,15 +79,15 @@ class ServiceUser {
       email,
       password: hashedPass,
       role,
-    });
+    }, { transaction });
 
-    return this.findOne(user.organizationId, user.id);
+    return this.findOne(user.organizationId, user.id, transaction);
   }
 
-  async update(organizationId, id, field, value) {
-    await verifyOrganization(organizationId);
+  async update(organizationId, id, field, value, transaction) {
+    await verifyOrganization(organizationId, transaction);
 
-    const user = await modelUser.findOne({ where: { organizationId, id } });
+    const user = await modelUser.findOne({ where: { organizationId, id } , transaction });
 
     if (!user) {
       throw error("this user don't exists");
@@ -107,13 +102,13 @@ class ServiceUser {
         user.name = value;
         await user.save();
 
-        return this.findOne(organizationId, id);
+        return this.findOne(organizationId, id, transaction);
 
       case "email":
         user.email = value;
         await user.save();
 
-        return this.findOne(organizationId, id);
+        return this.findOne(organizationId, id, transaction);
 
       case "role":
         if (user.role === "employee" && value === "admin") {
@@ -125,27 +120,19 @@ class ServiceUser {
         user.role = value;
         await user.save();
 
-        const token = jwt.sign(
-          {
-            id: user.id,
-            organizationId: user.organizationId,
-            role: user.role,
-          },
-          key,
-          { expiresIn: 60 * 60 }
-        );
+        const token = generateJwt(user)
 
         return {
-          user: await this.findOne(organizationId, id),
+          user: await this.findOne(organizationId, id, transaction),
           newToken: token,
         };
 
       case "password":
         const hashedPass = await bcrypt.hash(value, salt);
         user.password = hashedPass;
-        await user.save();
+        await user.save({ transaction });
 
-        return this.findOne(organizationId, id);
+        return this.findOne(organizationId, id, transaction);
 
       case "organizationId":
         throw error("change not allowed");
@@ -158,13 +145,13 @@ class ServiceUser {
     }
   }
 
-  async delete(organizationId, id) {
-    await verifyOrganization(organizationId);
+  async delete(organizationId, id, transaction) {
+    await verifyOrganization(organizationId, transaction);
 
     const user = await modelUser.findOne({
       where: { organizationId, id },
-      include: modelOrganization,
-    });
+      include: modelOrganization
+  ,  transaction });
 
     if (!user) {
       throw error("this user don't exists");
@@ -172,62 +159,54 @@ class ServiceUser {
 
     const returnUser = JSON.parse(JSON.stringify(user));
     delete returnUser.password;
-    await user.destroy({ include: modelOrganization });
+    await user.destroy({ include: modelOrganization ,  transaction });
     return returnUser;
   }
 
-  async login(email, password) {
+  async login(email, password, transaction) {
     if (!email || !password) {
       throw error("email or password not provided");
     }
-    const user = await modelUser.findOne({ where: { email } });
+    const user = await modelUser.findOne({ where: { email } ,  transaction });
 
     if (!user) {
 
       throw error("invalid email or password");
-      
+
     }
 
     const credentialsOk = await bcrypt.compare(password, user.password);
-    
+
     if (!credentialsOk) {
       throw error("invalid email or password");
     }
-    
-    const token = jwt.sign(
-      {
-        id: user.id,
-        organizationId: user.organizationId,
-        role: user.role,
-      },
-      key,
-      { expiresIn: 60 * 60 }
-    )
 
-   const refreshToken = await serviceToken.createToken();
+    const token = generateJwt(user)
 
-   await serviceSession.create(token, refreshToken[0].id, user.id)
+    const refreshToken = await serviceToken.createToken(transaction);
 
-    return {token, refreshToken: refreshToken[1]}
+    await serviceSession.create(token, refreshToken[0].id, user.id, transaction)
+
+    return { token, refreshToken: refreshToken[1] }
   }
 
-  async logout(jwt) {
-    return serviceSession.changeValidateSession(jwt)
+  async logout(jwt, transaction) {
+    return serviceSession.changeValidateSession(jwt, transaction)
   }
 
-  async getNewJwt(jwtToken, token, currentSession) {
-    const user = await this.findOne(currentSession.organizationId, currentSession.id)
-    if(!user){
-        throw error('user not found')
+  async getNewJwt(jwtToken, token, currentSession, transaction) {
+    const user = await this.findOne(currentSession.organizationId, currentSession.id, transaction)
+    if (!user) {
+      throw error('user not found')
     }
-    return await serviceSession.setJwt(jwtToken, token, user)
-    
+    return await serviceSession.setJwt(jwtToken, token, user, transaction)
+
   }
 
 
 
-  async verify(id, role) {
-    return await modelUser.findOne({ where: { id, role } });
+  async verify(id, role, transaction) {
+    return await modelUser.findOne({ where: { id, role } ,  transaction });
   }
 }
 

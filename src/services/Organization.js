@@ -6,11 +6,11 @@ const randomicPass = require("../fns/randomicPass.js");
 class ServiceOrganization {
 
 
-  async findOne(id) {
+  async findOne(id, transaction) {
     if (!id || isNaN(id)) {
       throw error("id incorrect");
     }
-    const organization = await model.findByPk(id);
+    const organization = await model.findOne({where: {id: TokenId}, transaction})
 
     if (!organization) {
       throw error("no organization in this id");
@@ -18,7 +18,7 @@ class ServiceOrganization {
     return organization;
   }
 
-  async create(name, address, phone, email) {
+  async create(name, address, phone, email, transaction) {
     const fields = {
       name: name,
       address: address,
@@ -31,7 +31,7 @@ class ServiceOrganization {
       }
     }
 
-    const organization = await model.create({ name, address, phone, email });
+    const organization = await model.create({ name, address, phone, email }, { transaction });
     const password = randomicPass()
 
     let admin = await serviceUser.create(
@@ -50,7 +50,7 @@ class ServiceOrganization {
     return { ...organization.dataValues, admin };
   }
 
-  async update(id, field, value) {
+  async update(id, field, value, transaction) {
     const organization = await this.findOne(id);
     if (!organization) {
       throw error("no organizations in this id");
@@ -58,16 +58,16 @@ class ServiceOrganization {
       throw error("changing the id is not allowed");
     }
     organization[field] = value;
-    await organization.save();
+    await organization.save({ transaction });
     return this.findOne(id);
   }
 
-  async delete(id) {
+  async delete(id, transaction) {
     if (!id || isNaN(id)) {
       throw error("Invalid or not provided ID.");
     }
     const organization = await this.findOne(id);
-    return await organization.destroy();
+    return await organization.destroy({ transaction });
   }
 }
 
