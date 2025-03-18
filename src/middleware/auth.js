@@ -1,51 +1,49 @@
-const jwt = require("jsonwebtoken");
 const serviceUser = require("../services/User.js");
-const serviceSession = require("../services/session.js")
-
-const key = process.env.JWT_KEY;
+const serviceSession = require("../services/session.js");
+const serviceToken = require("../services/refreshToken.js");
+const verifyJwt = require("../fns/verifyJwt.js");
 
 function auth(role) {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     const refreshToken = req.body;
     const token = req.headers["authorization"];
 
-    if (!token && !refreshToken) {
+    if (!token || !refreshToken) {
       res.status(400).json({ error: "token invalid or not provided" });
       return;
     }
 
-    jwt.verify(token, key, async (error, decoded) => {
-      if (error) {
-        
-        res.status(400).json({ error: "token invalid or not provided" });
-        return;
-      }
+    const decoded = verifyJwt(token);
+    const verify = await serviceUser.verify(decoded.id, decoded.role);
 
-      const verify = await serviceUser.verify(decoded.id, decoded.role);
+    if (
+      decoded === "Token Expired" ||
+      decoded === "Token invalid or not provided"
+    ) {
+      res.status(401).json({ error: decoded });
+      return
+    }
 
-      // verifica se o usuario ainda e existe no banco e, se for passado uma role de autorização, se a role do token de sessão atual corresponde a role exigida
-      //por exemplo, se a role passada no paramentro for admin, ele verifica se a role do token é admin
+    if (!verify || (role && role !== decoded.role)) {
+      res.status(401).json({ error: "forgot permission" });
+      return;
+    }
 
-      if (!verify || (role && role !== decoded.role)) {
-        res.status(401).json({ error: "forgot permission" });
-        return;
-      }
+    const session = await serviceSession.findSession(token);
 
-      const session = await serviceSession.findSession(token)
+    if (!session) {
+      res
+        .status(401)
+        .json({ errou: "session not found" });
+      return;
+    } else if(!session.isValid) {
+      res.status(401).json({error: 'your session as expired, please login again'})
+      
+    }
 
+    req.session = decoded;
 
-      if(!session || !session.isValid) {
-        console.log(session)
-        res.status(401).json({errou: "your session as expired, please login again"})
-        return
-      }
-
-
-
-      req.session = decoded;
-
-      next();
-    });
+    next();
   };
 }
 

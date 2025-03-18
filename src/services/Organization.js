@@ -39,7 +39,8 @@ class ServiceOrganization {
       `Admin ${organization.name}`,
       email,
       password,
-      "admin"
+      "admin",
+      transaction
     );
     admin = JSON.parse(JSON.stringify(admin));
 
