@@ -1,6 +1,5 @@
 const service = require('../services/session.js')
 const database = require('../DataBase.js')
-const serviceToken = require('../services/refreshToken.js')
 const serviceOrganization = require('../services/Organization.js')
 const serviceUser = require('../services/User.js')
 

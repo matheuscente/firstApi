@@ -10,7 +10,7 @@ class ServiceOrganization {
     if (!id || isNaN(id)) {
       throw error("id incorrect");
     }
-    const organization = await model.findOne({where: {id: TokenId}, transaction})
+    const organization = await model.findOne({where: {id}, transaction})
 
     if (!organization) {
       throw error("no organization in this id");
@@ -30,7 +30,7 @@ class ServiceOrganization {
         throw error(`${fieldName} invalid or not provided`);
       }
     }
-
+    
     const organization = await model.create({ name, address, phone, email }, { transaction });
     const password = randomicPass()
 
@@ -67,8 +67,8 @@ class ServiceOrganization {
     if (!id || isNaN(id)) {
       throw error("Invalid or not provided ID.");
     }
-    const organization = await this.findOne(id);
-    return await organization.destroy({ transaction });
+    const organization = await this.findOne(id, transaction);
+    return organization.destroy({transaction})
   }
 }
 

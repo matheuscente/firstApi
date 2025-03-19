@@ -38,6 +38,7 @@ class User {
           model: organization,
           key: "id",
         },
+        onDelete: 'CASCADE',
       },
     });
 
@@ -47,6 +48,7 @@ class User {
 
     organization.hasMany(this.model, {
       foreignKey: "organizationId",
+      
     });
   }
 }
