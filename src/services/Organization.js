@@ -1,7 +1,9 @@
 const model = require("../models/Organization.js");
 const serviceUser = require("./User.js");
+const modelUser = require('../models/User.js')
 const error = require("../fns/error.js");
 const randomicPass = require("../fns/randomicPass.js");
+const { where } = require("sequelize");
 
 class ServiceOrganization {
 
@@ -52,15 +54,25 @@ class ServiceOrganization {
   }
 
   async update(id, field, value, transaction) {
-    const organization = await this.findOne(id);
+    if(!value) {
+      throw error('set a value to modification')
+    } else if(!field) {
+      throw error('set a field to modification')
+    }else if (field === "id") {
+      throw error("changing the id is not allowed");
+    }
+    const fields = ['name', 'address', 'phone', 'email']
+    const isFieldValid = fields.includes(field)
+    if(!isFieldValid) {
+      throw error('field not valid')
+    }
+    const organization = await this.findOne(id, transaction);
     if (!organization) {
       throw error("no organizations in this id");
-    } else if (field === "id") {
-      throw error("changing the id is not allowed");
     }
     organization[field] = value;
     await organization.save({ transaction });
-    return this.findOne(id);
+    return this.findOne(id, transaction);
   }
 
   async delete(id, transaction) {
@@ -68,6 +80,7 @@ class ServiceOrganization {
       throw error("Invalid or not provided ID.");
     }
     const organization = await this.findOne(id, transaction);
+    await modelUser.destroy({where: {organizationId: organization.id}, transaction})
     return organization.destroy({transaction})
   }
 }

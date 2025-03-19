@@ -38,7 +38,7 @@ class User {
           model: organization,
           key: "id",
         },
-        onDelete: 'CASCADE',
+        
       },
     });
 

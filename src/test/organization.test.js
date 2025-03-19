@@ -1,5 +1,6 @@
 
 const database = require("../DataBase.js");
+const error = require("../fns/error.js");
 const serviceOrganization = require("../services/Organization.js");
 
 describe("create organization", () => {
@@ -127,7 +128,8 @@ describe('delete organization', () => {
 
  it('success', async () => {
   const deletedOrg = await serviceOrganization.delete(organization.id, transaction)
-  const findOrganization = serviceOrganization.findOne(deletedOrg.id, transaction)
+  const findOrganization = serviceOrganization.findOne(organization.id, transaction)
+  
   await expect(findOrganization).rejects.toThrow('no organization in this id')
  })
 
@@ -145,5 +147,61 @@ it('fail for NaN id', async () => {
   const deletedOrg =  serviceOrganization.delete('abc', transaction)
   await expect(deletedOrg).rejects.toThrow('Invalid or not provided ID.')
 })
+})
+
+describe('update organization', () => {
+    let transaction,
+    organization 
+  
+   beforeEach(async () => {
+     transaction = await database.db.transaction();
+     organization = await serviceOrganization.create('teste', 'teste', 'teste', 'teste', transaction)
+   });
+  
+   afterEach(async () => {
+     await transaction.rollback();
+   });
+   
+   it('fail for not found organizations', async () => {
+    const deletedOrg = serviceOrganization.update(999999, 'name', 'test', transaction)
+    await expect(deletedOrg).rejects.toThrow('no organization in this id')
+ })
+
+ it('fail for not provide value', async () => {
+  const uptadeOrg = serviceOrganization.update(organization.id, 'name', null, transaction)
+  await expect(uptadeOrg).rejects.toThrow('set a value to modification')
+})
+
+it('fail for not provide field', async () => {
+ const uptadeOrg = serviceOrganization.update(organization.id, null, 'teste', transaction)
+ await expect(uptadeOrg).rejects.toThrow('set a field to modification')
+})
+
+it('fail for invalid field', async () => {
+  const uptadeOrg = serviceOrganization.update(organization.id, 'test', 'teste', transaction)
+  await expect(uptadeOrg).rejects.toThrow('field not valid')
+ })
+
+ it('fail for unique violation', async () => {
+  const fields = ['phone', 'email']
+  for(let i = 0; i < 2; i ++) {
+    const uptadeOrg = serviceOrganization.update(organization.id, 'name', 'teste', transaction)
+    try {
+      await uptadeOrg
+    } catch(err) {
+      console.log(err)
+      expect(err.name).toMatch(/SequelizeUniqueConstraintError/)
+    }
+  }
+  
+  
+ })
+
+ it('fail if field is id', async () => {
+    const uptadeOrg = serviceOrganization.update(organization.id, 'id', 999999, transaction)
+
+      await expect(uptadeOrg).rejects.toThrow('changing the id is not allowed')
+  })
+
 })
 

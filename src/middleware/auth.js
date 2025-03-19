@@ -1,49 +1,50 @@
+const jwt = require("jsonwebtoken");
 const serviceUser = require("../services/User.js");
-const serviceSession = require("../services/session.js");
-const serviceToken = require("../services/refreshToken.js");
-const verifyJwt = require("../fns/verifyJwt.js");
+const serviceSession = require("../services/session.js")
+
+const key = process.env.JWT_KEY;
 
 function auth(role) {
-  return async (req, res, next) => {
+  return (req, res, next) => {
     const refreshToken = req.body;
     const token = req.headers["authorization"];
 
-    if (!token || !refreshToken) {
+    if (!token && !refreshToken) {
       res.status(400).json({ error: "token invalid or not provided" });
       return;
     }
 
-    const decoded = verifyJwt(token);
-    const verify = await serviceUser.verify(decoded.id, decoded.role);
+    jwt.verify(token, key, async (error, decoded) => {
+      if (error) {
+        
+        res.status(400).json({ error: "token invalid or not provided" });
+        return;
+      }
 
-    if (
-      decoded === "Token Expired" ||
-      decoded === "Token invalid or not provided"
-    ) {
-      res.status(401).json({ error: decoded });
-      return
-    }
+      const verify = await serviceUser.verify(decoded.id, decoded.role);
 
-    if (!verify || (role && role !== decoded.role)) {
-      res.status(401).json({ error: "forgot permission" });
-      return;
-    }
+      // verifica se o usuario ainda e existe no banco e, se for passado uma role de autorização, se a role do token de sessão atual corresponde a role exigida
+      //por exemplo, se a role passada no paramentro for admin, ele verifica se a role do token é admin
 
-    const session = await serviceSession.findSession(token);
+      if (!verify || (role && role !== decoded.role)) {
+        res.status(401).json({ error: "forgot permission" });
+        return;
+      }
 
-    if (!session) {
-      res
-        .status(401)
-        .json({ errou: "session not found" });
-      return;
-    } else if(!session.isValid) {
-      res.status(401).json({error: 'your session as expired, please login again'})
-      
-    }
+      const session = await serviceSession.findSession(token)
 
-    req.session = decoded;
 
-    next();
+      if(!session || !session.isValid) {
+        res.status(401).json({errou: "your session as expired, please login again"})
+        return
+      }
+
+
+
+      req.session = decoded;
+
+      next();
+    });
   };
 }
 
