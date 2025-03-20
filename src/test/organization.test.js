@@ -161,6 +161,22 @@ describe('update organization', () => {
    afterEach(async () => {
      await transaction.rollback();
    });
+
+   it('sucess', async () => {
+    const update = 'update'
+    const values = {
+      name: 'teste',
+      address: 'teste',
+      phone: 'teste',
+      email: 'teste'
+    }
+
+    for(const value in values) {
+      const updatedOrg = await serviceOrganization.update(organization.id, value, update, transaction)
+      const testField = updatedOrg[value]
+      expect(testField).toBe(update)
+    }
+   })
    
    it('fail for not found organizations', async () => {
     const deletedOrg = serviceOrganization.update(999999, 'name', 'test', transaction)
