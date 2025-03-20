@@ -1,6 +1,5 @@
 
 const database = require("../DataBase.js");
-const error = require("../fns/error.js");
 const serviceOrganization = require("../services/Organization.js");
 
 describe("create organization", () => {

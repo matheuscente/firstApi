@@ -1,18 +1,23 @@
-const model = require("../models/Organization.js");
 const serviceUser = require("./User.js");
 const modelUser = require('../models/User.js')
 const error = require("../fns/error.js");
 const randomicPass = require("../fns/randomicPass.js");
-const { where } = require("sequelize");
+const Organization = require("../models/Organization.js");
 
 class ServiceOrganization {
-
+  constructor(model, modelUser, randomicPass, error, serviceUser) {
+    this.model = model
+    this.modelUser = modelUser
+    this.randomicPass = randomicPass
+    this.error = error
+    this.serviceUser = serviceUser
+  }
 
   async findOne(id, transaction) {
     if (!id || isNaN(id)) {
       throw error("id incorrect");
     }
-    const organization = await model.findOne({where: {id}, transaction})
+    const organization = await this.model.findOne({where: {id}, transaction})
 
     if (!organization) {
       throw error("no organization in this id");
@@ -33,7 +38,7 @@ class ServiceOrganization {
       }
     }
     
-    const organization = await model.create({ name, address, phone, email }, { transaction });
+    const organization = await this.model.create({ name, address, phone, email }, { transaction });
     const password = randomicPass()
 
     let admin = await serviceUser.create(
@@ -85,4 +90,4 @@ class ServiceOrganization {
   }
 }
 
-module.exports = new ServiceOrganization();
+module.exports = new ServiceOrganization(Organization, modelUser, randomicPass, error, serviceUser);
