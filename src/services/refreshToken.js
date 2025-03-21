@@ -1,7 +1,6 @@
 const error = require("../fns/error.js");
 const modelToken = require('../models/refreshToken.js')
-const randomicPass = require("../fns/randomicPass.js");
-const bcrypt = require('bcrypt');
+const security = require("./crypto.js")
 
 require("dotenv").config("../config.env");
 
@@ -17,8 +16,8 @@ class RefreshToken {
     }
 
     async createToken(transaction) {
-        const token = randomicPass()
-        const hashedToken = await bcrypt.hash(token, 10)
+        const token = security.randomicPass()
+        const hashedToken = await security.hash(token, 10)
         const refreshToken = await modelToken.create({ token: hashedToken }, { transaction })
 
         return [refreshToken, { token: token, created: refreshToken.createdAt }]

@@ -112,7 +112,7 @@ describe('find one organization', () => {
 
 })
 
-/*describe('delete organization', () => {
+describe('delete organization', () => {
   let transaction,
   organization 
 
@@ -126,9 +126,10 @@ describe('find one organization', () => {
  });
 
  it('success', async () => {
-  const deletedOrg = await serviceOrganization.delete(organization.id, transaction)
+  const deletedOrg =  await serviceOrganization.delete(organization.id, transaction)
   const findOrganization = serviceOrganization.findOne(organization.id, transaction)
   
+  expect(deletedOrg.id).toBe(organization.id)
   await expect(findOrganization).rejects.toThrow('no organization in this id')
  })
 
@@ -146,7 +147,7 @@ it('fail for NaN id', async () => {
   const deletedOrg =  serviceOrganization.delete('abc', transaction)
   await expect(deletedOrg).rejects.toThrow('Invalid or not provided ID.')
 })
-})*/
+})
 
 describe('update organization', () => {
     let transaction,
@@ -204,7 +205,6 @@ it('fail for invalid field', async () => {
     try {
       await uptadeOrg
     } catch(err) {
-      console.log(err)
       expect(err.name).toMatch(/SequelizeUniqueConstraintError/)
     }
   }

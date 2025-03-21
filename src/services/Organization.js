@@ -1,18 +1,14 @@
 const serviceUser = require("./User.js");
-const modelUser = require('../models/User.js')
 const error = require("../fns/error.js");
-const randomicPass = require("../fns/randomicPass.js");
 const repository = require("../repository/repository.js");
-const organization = require('../models/Organization.js')
+const crypto = require('./crypto.js')
 
 class ServiceOrganization {
-  constructor(model, modelUser, randomicPass, error, serviceUser, repositoryOrganization) {
+  constructor(error, serviceUser, repositoryOrganization, crypto) {
     this.repository = repositoryOrganization
-    this.model = model
-    this.modelUser = modelUser
-    this.randomicPass = randomicPass
     this.error = error
     this.serviceUser = serviceUser
+    this.security = crypto
   }
 
   async findOne(id, transaction) {
@@ -41,7 +37,7 @@ class ServiceOrganization {
     }
     
     const organization = await this.repository.create( {name, address, phone, email} ,transaction );
-    const password = randomicPass()
+    const password = this.security.randomicPass()
 
     let admin = await this.serviceUser.create({
       organization,
@@ -85,17 +81,16 @@ class ServiceOrganization {
       throw error("Invalid or not provided ID.");
     }
     const organization = await this.repository.findOne({id}, transaction);
-    await modelUser.destroy({where: {organizationId: organization.id}, transaction})
+    const users = await this.serviceUser.findAll(id, transaction)
+    
+      await Promise.all(users.map( (user) => {
+         return this.serviceUser.delete(id, user.id, transaction)
+      }))
+
+      console.log(organization)
     return this.repository.delete(organization, transaction)
   }
-
-  async verifyOrganization(id, transaction) {
-      const organization = await this.findOne(id, transaction);
-      if (!organization) {
-        throw error("no organization in this id");
-      }
-    }
   
 }
 
-module.exports = new ServiceOrganization(organization, modelUser, randomicPass, error, serviceUser, new repository(require('../models/Organization.js')));
+module.exports = new ServiceOrganization(error, serviceUser, new repository(require('../models/Organization.js')), crypto);

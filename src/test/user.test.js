@@ -1,6 +1,8 @@
 const service = require("../services/User.js");
 const serviceOrganization = require("../services/Organization.js");
 const database = require("../DataBase.js");
+const security = require('../services/crypto.js')
+const serviceSession = require('../services/session.js')
 
 describe("create user test", () => {
   let transaction;
@@ -279,9 +281,179 @@ describe("delete test", () => {
     await transaction.rollback();
   });
 
-  it('sucess', async() => {
-    const deletedUser = await  service.delete(organization.id, user.id, transaction)
+  it('sucess', async () => {
+    const deletedUser = await service.delete(organization.id, user.id, transaction)
+    const findUser = service.findOne(organization.id, deletedUser.id, transaction)
     expect(deletedUser.id).toBe(user.id)
+    await expect(findUser).rejects.toThrow('no user with this id in this organization')
+
+  })
+
+  it('failed to find organizations with the given id', async () => {
+    const deletedUser = service.delete(9999, user.id, transaction)
+    await expect(deletedUser).rejects.toThrow('no organization in this id')
+  })
+
+  it('failed to find users with the given id', async () => {
+    const deletedUser = service.delete(organization.id, 9999, transaction)
+    await expect(deletedUser).rejects.toThrow('no user with this id in this organization')
+  })
+})
+
+describe("login test", () => {
+  let transaction;
+  let organization;
+  let user
+
+  beforeEach(async () => {
+    transaction = await database.db.transaction();
+    organization = await serviceOrganization.create(
+      "teste",
+      "teste",
+      "teste",
+      "teste",
+      transaction
+    );
+
+    user = await service.create({
+      organization,
+      name: `teste`,
+      email: `testeUser`,
+      password: `teste`,
+      role: `employee`,
+    }, transaction)
+  });
+
+  afterEach(async () => {
+    await transaction.rollback();
+  });
+
+  it('sucess', async () => {
+    const login = await service.login(user.email, "teste", transaction)
+    const { token } = login
+    console.log(login)
+    const decoded = security.verifyJwt(token)
+    console.log(decoded)
+    const { id, organizationId, role } = decoded
+    expect(id).toBe(user.id)
+    expect(organizationId).toBe(user.organizationId)
+    expect(role).toBe(user.role)
+  })
+
+  it('failed because it could not find a user with the email provided', async () => {
+    const login = service.login('invalidEmail', "teste", transaction)
+    await expect(login).rejects.toThrow('invalid email or password')
+  })
+
+  it('failed because invalid password', async () => {
+    const login = service.login(user.email, "invalidPassword", transaction)
+    await expect(login).rejects.toThrow('invalid email or password')
+  })
+
+
+})
+
+describe("logout test", () => {
+  let transaction;
+  let organization;
+  let user
+  let login
+
+  beforeEach(async () => {
+    transaction = await database.db.transaction();
+    organization = await serviceOrganization.create(
+      "teste",
+      "teste",
+      "teste",
+      "teste",
+      transaction
+    );
+
+    user = await service.create({
+      organization,
+      name: `teste`,
+      email: `testeUser`,
+      password: `teste`,
+      role: `employee`,
+    }, transaction)
+
+    login = await service.login(user.email, 'teste', transaction)
+  });
+
+  afterEach(async () => {
+    await transaction.rollback();
+  });
+
+  it('success', async () => {
+    const { token } = login
+    const logout = await service.logout(token, transaction)
+    const session = await serviceSession.findSession(token, transaction)
+    expect(logout.id).toBe(session.id)
+    expect(logout.isValid).toBe(session.isValid)
+
+  })
+
+  it('failed because there is no session bound to jwt or the session is invalid', async () => {
+    const { token } = login
+    const logout = service.logout("99999", transaction)
+    await expect(logout).rejects.toThrow("session invalid")
+
 
   })
 })
+
+describe("verify test", () => {
+  let transaction;
+  let organization;
+  let user
+  let login
+
+  beforeEach(async () => {
+    transaction = await database.db.transaction();
+    organization = await serviceOrganization.create(
+      "teste",
+      "teste",
+      "teste",
+      "teste",
+      transaction
+    );
+
+    user = await service.create({
+      organization,
+      name: `teste`,
+      email: `testeUser`,
+      password: `teste`,
+      role: `employee`,
+    }, transaction)
+
+    login = await service.login(user.email, 'teste', transaction)
+  });
+
+  afterEach(async () => {
+    await transaction.rollback();
+  });
+
+  it('success', async () => {
+    const { token } = login
+    const decoded = security.verifyJwt(token)
+    const verify = await service.verify(decoded.id, decoded.role, transaction)
+    expect(verify.id).toBe(decoded.id)
+    expect(verify.role).toBe(decoded.role)
+  })
+
+  
+  it('fail for invalid id', async () => {
+    const { token } = login
+    const decoded = security.verifyJwt(token)
+    const verify = await service.verify(99999, decoded.role, transaction)
+    expect(verify).toBe(null)
+  })
+
+  it('fail for invalid role', async () => {
+    const { token } = login
+    const decoded = security.verifyJwt(token)
+    const verify = await service.verify(decoded.id, 'invalid role', transaction)
+    expect(verify).toBe(null)
+  })
+})
+

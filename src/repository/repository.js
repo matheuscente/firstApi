@@ -18,7 +18,6 @@ class Repository {
     }
 
     async findOne(whereParams, transaction) {
-        console.log(whereParams)
         if(this.alternativeModels) {
             const models = this.alternativeModels.map((model) => {
                 return {model: model}

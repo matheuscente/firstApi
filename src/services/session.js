@@ -74,6 +74,10 @@ class Session {
 
   async changeValidateSession(jwt,validate, transaction) {
     const session = await modelSession.findOne({ where: { jwt }, transaction });
+    if(!session) {
+      throw error("session invalid");
+      throw error('')
+    }
     session.isValid = validate;
     return session.save({ transaction });
   }

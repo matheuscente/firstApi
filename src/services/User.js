@@ -1,19 +1,18 @@
 const error = require("../fns/error.js");
-const bcrypt = require("bcrypt");
 const verifyOrganization = require("../fns/verifyOrganization.js");
 const serviceToken = require("./refreshToken.js");
 const serviceSession = require('./session.js')
-const generateJwt = require('../fns/generateJwt.js')
 const repository = require('../repository/repository.js')
-
+const crypto = require('./crypto.js')
 
 const salt = 10;
 class ServiceUser {
-  constructor(repository, error, bcrypt, verifyOrganization, serviceToken, serviceSession, generateJwt, ) {
+  constructor(repository, error, verifyOrganization, serviceToken, serviceSession, crypto) {
     this.repository = repository
-    this.bcrypt = bcrypt
+    this.security = crypto
     this.error = error
     this.verifyOrganization = verifyOrganization
+    this.serviceSession = serviceSession
   }
   async findAll(organizationId, transaction) {
     await verifyOrganization(organizationId, transaction);
@@ -24,7 +23,7 @@ class ServiceUser {
       throw this.error("no have users in this organization");
     }
 
-    const returnUsers = JSON.parse(JSON.stringify(users));
+    const returnUsers = [...users];
     for (const user in returnUsers) {
       delete returnUsers[user].password;
     }
@@ -66,7 +65,7 @@ class ServiceUser {
       }
     }
 
-    const hashedPass = await this.bcrypt.hash(password, salt);
+    const hashedPass = await this.security.hash(password, salt);
 
     if (!(role === "admin" || role === "employee")) {
       throw this.error("invalid role");
@@ -129,7 +128,7 @@ class ServiceUser {
         };
 
       case "password":
-        const hashedPass = await bcrypt.hash(value, salt);
+        const hashedPass = await this.security.hash(value, salt);
         user.password = hashedPass;
         await user.save({ transaction });
 
@@ -148,7 +147,7 @@ class ServiceUser {
 
   async delete(organizationId, id, transaction) {
     await this.verifyOrganization(organizationId, transaction);
-    const user = await this.repository.findOne({ organizationId, id },  transaction );
+    const user = await this.repository.findOne({organizationId, id} ,  transaction );
 
     if (!user) {
       throw this.error("no user with this id in this organization");
@@ -164,7 +163,7 @@ class ServiceUser {
     if (!email || !password) {
       throw this.error("email or password not provided");
     }
-    const user = await modelUser.findOne({ where: { email } ,  transaction });
+    const user = await this.repository.findOne({email},  transaction );
 
     if (!user) {
 
@@ -172,14 +171,13 @@ class ServiceUser {
 
     }
 
-    const credentialsOk = await bcrypt.compare(password, user.password);
+    const credentialsOk = await this.security.compare(password, user.password);
 
     if (!credentialsOk) {
       throw this.error("invalid email or password");
     }
 
-    const token = generateJwt(user)
-
+    const token = await this.security.generateJwt(user)
     const refreshToken = await serviceToken.createToken(transaction);
 
     await serviceSession.create(token, refreshToken[0].id, user.id, transaction)
@@ -188,7 +186,7 @@ class ServiceUser {
   }
 
   async logout(jwt, transaction) {
-    return serviceSession.changeValidateSession(jwt, transaction)
+    return this.serviceSession.changeValidateSession(jwt, false, transaction)
   }
 
   async getNewJwt(jwtToken, token, currentSession, transaction) {
@@ -196,15 +194,15 @@ class ServiceUser {
     if (!user) {
       throw this.error('user not found')
     }
-    return await serviceSession.setJwt(jwtToken, token, user, transaction)
+    return await this.serviceSession.setJwt(jwtToken, token, user, transaction)
 
   }
 
 
 
   async verify(id, role, transaction) {
-    return await modelUser.findOne({ where: { id, role } ,  transaction });
+    return await this.repository.findOne({ id, role } ,  transaction);
   }
 }
 
-module.exports = new ServiceUser(new repository(require('../models/User.js'), [require('../models/Organization.js')]), error, bcrypt, verifyOrganization, serviceToken, serviceSession, generateJwt);
+module.exports = new ServiceUser(new repository(require('../models/User.js'), [require('../models/Organization.js')]), error, verifyOrganization, serviceToken, serviceSession, crypto);
