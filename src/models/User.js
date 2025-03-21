@@ -5,7 +5,7 @@ class User {
   constructor() {
     this.model = database.db.define("user", {
       id: {
-        type: database.db.Sequelize.UUID,
+        type: database.db.Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true,
       },

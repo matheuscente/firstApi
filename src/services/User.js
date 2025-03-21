@@ -6,17 +6,19 @@ const serviceSession = require('./session.js')
 const generateJwt = require('../fns/generateJwt.js')
 const repository = require('../repository/repository.js')
 
+
 const salt = 10;
 class ServiceUser {
-  constructor(repository, error, bcrypt, verifyOrganization, serviceToken, serviceSession, generateJwt) {
+  constructor(repository, error, bcrypt, verifyOrganization, serviceToken, serviceSession, generateJwt, ) {
     this.repository = repository
     this.bcrypt = bcrypt
     this.error = error
+    this.verifyOrganization = verifyOrganization
   }
-  async findAll(organization, transaction) {
-    await verifyOrganization(organization.Id, transaction);
+  async findAll(organizationId, transaction) {
+    await verifyOrganization(organizationId, transaction);
 
-    const users = await this.repository.findAll({organizationId: organization.id}, transaction);
+    const users = await this.repository.findAll({organizationId}, transaction);
 
     if (users.length === 0) {
       throw this.error("no have users in this organization");
@@ -30,11 +32,11 @@ class ServiceUser {
   }
 
   async findOne(organizationId, id, transaction) {
-    console.log(organizationId, id)
     if (!id || isNaN(id)) {
       throw this.error("invalid userId");
     }
-    const user = await this.repository.findOne(organizationId, id, transaction);
+    await this.verifyOrganization(organizationId, transaction)
+    const user = await this.repository.findOne({organizationId, id}, transaction);
 
     if (!user) {
       throw this.error("no user with this id in this organization");
@@ -45,14 +47,13 @@ class ServiceUser {
     return returnUser;
   }
 
-  async create(organizationId, name, email, password, role, transaction) {
-
-    if (!organizationId) {
+  async create(data, transaction) {
+    const {organization, name, email, password, role} = data
+    if (!organization.id) {
       throw this.error("organization not found");
     }
-
     const objVerify = {
-      organizationId,
+      organizationId: organization.id,
       name: name,
       email: email,
       password: password,
@@ -70,8 +71,10 @@ class ServiceUser {
     if (!(role === "admin" || role === "employee")) {
       throw this.error("invalid role");
     }
+
+
     const user = await this.repository.create({
-      organizationId,
+      organizationId: organization.id,
       name,
       email,
       password: hashedPass,
@@ -83,6 +86,7 @@ class ServiceUser {
 
   async update(organizationId, id, field, value, transaction) {
     await verifyOrganization(organizationId, transaction);
+
 
     const user = await modelUser.findOne({ where: { organizationId, id } , transaction });
 
@@ -143,20 +147,16 @@ class ServiceUser {
   }
 
   async delete(organizationId, id, transaction) {
-    await verifyOrganization(organizationId, transaction);
-
-    const user = await modelUser.findOne({
-      where: { organizationId, id },
-      include: modelOrganization
-  ,  transaction });
+    await this.verifyOrganization(organizationId, transaction);
+    const user = await this.repository.findOne({ organizationId, id },  transaction );
 
     if (!user) {
-      throw this.error("this user don't exists");
+      throw this.error("no user with this id in this organization");
     }
 
     const returnUser = JSON.parse(JSON.stringify(user));
     delete returnUser.password;
-    await user.destroy({ include: modelOrganization ,  transaction });
+    await this.repository.delete(user, transaction);
     return returnUser;
   }
 
@@ -207,4 +207,4 @@ class ServiceUser {
   }
 }
 
-module.exports = new ServiceUser(new repository(require('../models/User.js')), error, bcrypt, verifyOrganization, serviceToken, serviceSession, generateJwt);
+module.exports = new ServiceUser(new repository(require('../models/User.js'), [require('../models/Organization.js')]), error, bcrypt, verifyOrganization, serviceToken, serviceSession, generateJwt);

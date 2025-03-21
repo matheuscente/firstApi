@@ -4,7 +4,7 @@ class Organization {
   constructor() {
     this.model = database.db.define("organization", {
       id: {
-        type: database.db.Sequelize.UUID,
+        type: database.db.Sequelize.INTEGER,
         primaryKey: true,
         autoIncrement: true,
       },

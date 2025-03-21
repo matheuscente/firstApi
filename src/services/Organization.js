@@ -19,7 +19,7 @@ class ServiceOrganization {
     if (!id || isNaN(id)) {
       throw error("id incorrect");
     }
-    const organization = await this.repository.findOne(id, transaction)
+    const organization = await this.repository.findOne({id}, transaction)
 
     if (!organization) {
       throw error("no organization in this id");
@@ -43,12 +43,12 @@ class ServiceOrganization {
     const organization = await this.repository.create( {name, address, phone, email} ,transaction );
     const password = randomicPass()
 
-    let admin = await this.serviceUser.create(
-      organization.id,
-      `Admin ${organization.name}`,
+    let admin = await this.serviceUser.create({
+      organization,
+      name: `Admin ${organization.name}`,
       email,
       password,
-      "admin",
+      role: "admin"},
       transaction
     );
     admin = JSON.parse(JSON.stringify(admin));
@@ -73,7 +73,7 @@ class ServiceOrganization {
     if(!isFieldValid) {
       throw error('field not valid')
     }
-    const organization = await this.repository.findOne(id, transaction);
+    const organization = await this.repository.findOne( {id}, transaction);
     if (!organization) {
       throw error("no organization in this id");
     }
@@ -84,10 +84,18 @@ class ServiceOrganization {
     if (!id || isNaN(id)) {
       throw error("Invalid or not provided ID.");
     }
-    const organization = await this.repository.findOne(id, transaction);
+    const organization = await this.repository.findOne({id}, transaction);
     await modelUser.destroy({where: {organizationId: organization.id}, transaction})
     return this.repository.delete(organization, transaction)
   }
+
+  async verifyOrganization(id, transaction) {
+      const organization = await this.findOne(id, transaction);
+      if (!organization) {
+        throw error("no organization in this id");
+      }
+    }
+  
 }
 
 module.exports = new ServiceOrganization(organization, modelUser, randomicPass, error, serviceUser, new repository(require('../models/Organization.js')));

@@ -6,22 +6,27 @@ class Repository {
         this.alternativeModels = models
     }
 
-    async findAll(data, transaction) {
+    async findAll(whereParams, transaction) {
         if(this.alternativeModels) {
                 const models = this.alternativeModels.map((model) => {
                     return {model: model}
                 })
-                return this.model.findOne({where: {...data}, include: [...models], transaction})
+                return this.model.findAll({where: whereParams, include: [...models], transaction})
             
         }
-        return this.model.findAll({where: {...data}, transaction})
+        return this.model.findAll({where: whereParams, transaction})
     }
 
-    async findOne(data, id, transaction) {
-        if(data) {
-            return this.model.findOne({where: {...data, id}, transaction})
-        }
-        return this.model.findOne({where: {id}, transaction})
+    async findOne(whereParams, transaction) {
+        console.log(whereParams)
+        if(this.alternativeModels) {
+            const models = this.alternativeModels.map((model) => {
+                return {model: model}
+            })
+            return this.model.findOne({where: whereParams, include: [...models], transaction})
+        
+    }
+        return this.model.findOne({where: whereParams, transaction})
     }
 
     async create(data, transaction) {
