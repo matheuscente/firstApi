@@ -1,22 +1,25 @@
-const modelOrganization = require("../models/Organization.js");
 const error = require("../fns/error.js");
-const modelUser = require("../models/User.js");
 const bcrypt = require("bcrypt");
 const verifyOrganization = require("../fns/verifyOrganization.js");
 const serviceToken = require("./refreshToken.js");
 const serviceSession = require('./session.js')
 const generateJwt = require('../fns/generateJwt.js')
+const repository = require('../repository/repository.js')
 
 const salt = 10;
 class ServiceUser {
-  async findAll(organizationId, transaction) {
-    await verifyOrganization(organizationId, transaction);
-    const users = await modelUser.findAll({
-      where: { organizationId },
-      include: modelOrganization, transaction });
+  constructor(repository, error, bcrypt, verifyOrganization, serviceToken, serviceSession, generateJwt) {
+    this.repository = repository
+    this.bcrypt = bcrypt
+    this.error = error
+  }
+  async findAll(organization, transaction) {
+    await verifyOrganization(organization.Id, transaction);
+
+    const users = await this.repository.findAll({organizationId: organization.id}, transaction);
 
     if (users.length === 0) {
-      throw error("no have users in this organization");
+      throw this.error("no have users in this organization");
     }
 
     const returnUsers = JSON.parse(JSON.stringify(users));
@@ -27,17 +30,14 @@ class ServiceUser {
   }
 
   async findOne(organizationId, id, transaction) {
-    await modelOrganization.findOne({ where: { id: organizationId } ,  transaction });
-
+    console.log(organizationId, id)
     if (!id || isNaN(id)) {
-      throw error("invalid userId");
+      throw this.error("invalid userId");
     }
-    const user = await modelUser.findOne({
-      where: { organizationId, id },
-      include: modelOrganization,  transaction });
+    const user = await this.repository.findOne(organizationId, id, transaction);
 
     if (!user) {
-      throw error("no user with this id in this organization");
+      throw this.error("no user with this id in this organization");
     }
 
     const returnUser = JSON.parse(JSON.stringify(user));
@@ -46,16 +46,13 @@ class ServiceUser {
   }
 
   async create(organizationId, name, email, password, role, transaction) {
-    const organization = await modelOrganization.findOne({
-      where: { id: organizationId }
-  ,  transaction });
 
-    if (!organization) {
-      throw error("organization not found");
+    if (!organizationId) {
+      throw this.error("organization not found");
     }
 
     const objVerify = {
-      organizationId: organizationId,
+      organizationId,
       name: name,
       email: email,
       password: password,
@@ -64,22 +61,22 @@ class ServiceUser {
 
     for (const item in objVerify) {
       if (!objVerify[item]) {
-        throw error(`please give a ${item}`);
+        throw this.error(`please give a ${item}`);
       }
     }
 
-    const hashedPass = await bcrypt.hash(password, salt);
+    const hashedPass = await this.bcrypt.hash(password, salt);
 
     if (!(role === "admin" || role === "employee")) {
-      throw error("invalid role");
+      throw this.error("invalid role");
     }
-    const user = await modelUser.create({
+    const user = await this.repository.create({
       organizationId,
       name,
       email,
       password: hashedPass,
       role,
-    }, { transaction });
+    }, transaction);
 
     return this.findOne(user.organizationId, user.id, transaction);
   }
@@ -90,11 +87,11 @@ class ServiceUser {
     const user = await modelUser.findOne({ where: { organizationId, id } , transaction });
 
     if (!user) {
-      throw error("this user don't exists");
+      throw this.error("this user don't exists");
     }
 
     if (!value) {
-      throw error("please set a value to modify");
+      throw this.error("please set a value to modify");
     }
 
     switch (field) {
@@ -112,10 +109,10 @@ class ServiceUser {
 
       case "role":
         if (user.role === "employee" && value === "admin") {
-          throw error("change not allowed");
+          throw this.error("change not allowed");
         }
         if (!(value === "admin" || value === "employee")) {
-          throw error("invalid role");
+          throw this.error("invalid role");
         }
         user.role = value;
         await user.save();
@@ -135,13 +132,13 @@ class ServiceUser {
         return this.findOne(organizationId, id, transaction);
 
       case "organizationId":
-        throw error("change not allowed");
+        throw this.error("change not allowed");
 
       case "id":
-        throw error("change not allowed");
+        throw this.error("change not allowed");
 
       default:
-        throw error("invalid field for modify or not provided");
+        throw this.error("invalid field for modify or not provided");
     }
   }
 
@@ -154,7 +151,7 @@ class ServiceUser {
   ,  transaction });
 
     if (!user) {
-      throw error("this user don't exists");
+      throw this.error("this user don't exists");
     }
 
     const returnUser = JSON.parse(JSON.stringify(user));
@@ -165,20 +162,20 @@ class ServiceUser {
 
   async login(email, password, transaction) {
     if (!email || !password) {
-      throw error("email or password not provided");
+      throw this.error("email or password not provided");
     }
     const user = await modelUser.findOne({ where: { email } ,  transaction });
 
     if (!user) {
 
-      throw error("invalid email or password");
+      throw this.error("invalid email or password");
 
     }
 
     const credentialsOk = await bcrypt.compare(password, user.password);
 
     if (!credentialsOk) {
-      throw error("invalid email or password");
+      throw this.error("invalid email or password");
     }
 
     const token = generateJwt(user)
@@ -197,7 +194,7 @@ class ServiceUser {
   async getNewJwt(jwtToken, token, currentSession, transaction) {
     const user = await this.findOne(currentSession.organizationId, currentSession.id, transaction)
     if (!user) {
-      throw error('user not found')
+      throw this.error('user not found')
     }
     return await serviceSession.setJwt(jwtToken, token, user, transaction)
 
@@ -210,4 +207,4 @@ class ServiceUser {
   }
 }
 
-module.exports = new ServiceUser();
+module.exports = new ServiceUser(new repository(require('../models/User.js')), error, bcrypt, verifyOrganization, serviceToken, serviceSession, generateJwt);

@@ -2,10 +2,12 @@ const serviceUser = require("./User.js");
 const modelUser = require('../models/User.js')
 const error = require("../fns/error.js");
 const randomicPass = require("../fns/randomicPass.js");
-const Organization = require("../models/Organization.js");
+const repository = require("../repository/repository.js");
+const organization = require('../models/Organization.js')
 
 class ServiceOrganization {
-  constructor(model, modelUser, randomicPass, error, serviceUser) {
+  constructor(model, modelUser, randomicPass, error, serviceUser, repositoryOrganization) {
+    this.repository = repositoryOrganization
     this.model = model
     this.modelUser = modelUser
     this.randomicPass = randomicPass
@@ -17,7 +19,7 @@ class ServiceOrganization {
     if (!id || isNaN(id)) {
       throw error("id incorrect");
     }
-    const organization = await this.model.findOne({where: {id}, transaction})
+    const organization = await this.repository.findOne(id, transaction)
 
     if (!organization) {
       throw error("no organization in this id");
@@ -38,10 +40,10 @@ class ServiceOrganization {
       }
     }
     
-    const organization = await this.model.create({ name, address, phone, email }, { transaction });
+    const organization = await this.repository.create( {name, address, phone, email} ,transaction );
     const password = randomicPass()
 
-    let admin = await serviceUser.create(
+    let admin = await this.serviceUser.create(
       organization.id,
       `Admin ${organization.name}`,
       email,
@@ -71,23 +73,21 @@ class ServiceOrganization {
     if(!isFieldValid) {
       throw error('field not valid')
     }
-    const organization = await this.findOne(id, transaction);
+    const organization = await this.repository.findOne(id, transaction);
     if (!organization) {
-      throw error("no organizations in this id");
+      throw error("no organization in this id");
     }
-    organization[field] = value;
-    await organization.save({ transaction });
-    return this.findOne(id, transaction);
+    return this.repository.update(organization, field, value, transaction)
   }
 
   async delete(id, transaction) {
     if (!id || isNaN(id)) {
       throw error("Invalid or not provided ID.");
     }
-    const organization = await this.findOne(id, transaction);
+    const organization = await this.repository.findOne(id, transaction);
     await modelUser.destroy({where: {organizationId: organization.id}, transaction})
-    return organization.destroy({transaction})
+    return this.repository.delete(organization, transaction)
   }
 }
 
-module.exports = new ServiceOrganization(Organization, modelUser, randomicPass, error, serviceUser);
+module.exports = new ServiceOrganization(organization, modelUser, randomicPass, error, serviceUser, new repository(require('../models/Organization.js')));

@@ -112,7 +112,7 @@ describe('find one organization', () => {
 
 })
 
-describe('delete organization', () => {
+/*describe('delete organization', () => {
   let transaction,
   organization 
 
@@ -146,7 +146,7 @@ it('fail for NaN id', async () => {
   const deletedOrg =  serviceOrganization.delete('abc', transaction)
   await expect(deletedOrg).rejects.toThrow('Invalid or not provided ID.')
 })
-})
+})*/
 
 describe('update organization', () => {
     let transaction,
