@@ -51,16 +51,32 @@ class Crypto {
 
     }
 
+     decodeJwtPayload(token) {
+        const payload = token.split('.')[1];
+        const decodedPayload = JSON.parse(atob(payload));
+        return decodedPayload;
+      }
+      
+
     verifyJwt(token) {
         let decoded
         try {
             decoded = this.tokenModule.verify(token, key)
-            return decoded
+            return {
+                isValid: true,
+                decoded
+            }
         } catch (err) {
             if (err instanceof jwt.TokenExpiredError) {
-                return 'Token Expired'
+                return {
+                    isValid: false,
+                    decoded: ''
+                }
             }
-            return 'Token invalid or not provided'
+            return {
+                isValid: false,
+                decoded: "tokenInvalid"
+            }
         }
     }
 }

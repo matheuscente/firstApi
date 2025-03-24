@@ -1,20 +1,30 @@
-const modelSession = require("../models/session.js");
-const modelToken = require("../models/refreshToken.js");
+
 const serviceToken = require("./refreshToken.js");
 const error = require("../fns/error.js");
-const bcrypt = require("bcrypt");
-const generateJwt = require("jsonwebtoken");
-require("dotenv").config();
-const isTokenValid = require("../fns/isTokenValid.js");
+const repository = require('../repository/repository.js')
+const crypto = require('../services/crypto.js')
+const modelSession = require('../models/session.js')
 
-class Session {
-  async create(jwt, refreshTokenId, userId, transaction) {
-    const values = { jwt, refreshTokenId, userId };
-    const undefinedKey = Object.keys(values).find((key) => !values[key]);
 
-    if (undefinedKey) {
-      throw error(`${undefinedKey} not defined`);
+class Session { 
+  constructor (repository, serviceToken, crypto) {
+    this.repository = new repository(require('../models/session.js'), require('../models/refreshToken.js'))
+    this.serviceToken = serviceToken,
+    this.security = crypto
+
+  }
+  async create(jwt, refreshTokenId, userId , transaction) {
+    if(!refreshTokenId) {
+      throw error('invalid refresh token')
+    } else if(!userId) {
+      throw error('invalid user')
     }
+
+    const isJwtValid = await this.security.verifyJwt(jwt)
+    if(!isJwtValid.isValid) {
+      throw error('token invalid or not provided')
+    }
+
     try {
       const session = await modelSession.create(
         { jwt, refreshTokenId, userId, isValid: true },
@@ -27,11 +37,10 @@ class Session {
   }
 
   async findSession(jwt, transaction) {
-    const session = await modelSession.findOne({
-      where: { jwt },
-      include: modelToken,
-      transaction,
-    });
+    const session = await modelSession.findOne({where: {jwt}
+    ,
+    transaction,}
+    );
 
     return session;
   }
@@ -44,51 +53,45 @@ class Session {
   async setToken(jwt, token, transaction) {
     const session = await this.findSession(jwt, transaction);
     const refreshToken = session.refreshToken.token;
-    const isTokenValid = await bcrypt.compare(token, refreshToken);
+    const isTokenValid = await this.security.compare(token, refreshToken);
 
     if (!isTokenValid) {
       throw error("invalid jwt or refresh token");
     }
 
-    const newToken = await serviceToken.createToken(transaction);
+    const newToken = await this.serviceToken.createToken(transaction);
     session.token = newToken[0].id;
     await session.save({ transaction });
     return newToken[1];
   }
 
-  async setJwt(jwt, token, user, transaction) {
-    const session = await this.findSession(jwt, transaction);
-    const refreshToken = session.refreshToken.token;
-    const isTokenValid = await bcrypt.compare(token, refreshToken);
-
-    if (!isTokenValid) {
-      throw error("invalid jwt or refresh token");
+  async setJwt(session, token, transaction) {
+    if(!session) {
+      throw error("invalid session")
+    } else if(!token) {
+      throw error("invalid token")
     }
 
-    const newJwt = generateJwt(user);
-
-    session.jwt = newJwt;
+    session.jwt = token;
     await session.save({ transaction });
-    return newJwt;
+    return token;
   }
 
   async changeValidateSession(jwt,validate, transaction) {
     const session = await modelSession.findOne({ where: { jwt }, transaction });
     if(!session) {
       throw error("session invalid");
-      throw error('')
     }
     session.isValid = validate;
     return session.save({ transaction });
   }
 
-  async validateSession(jwt, currentDate, transaction) {
-    const session = await this.findSession(jwt, transaction);
+  async validateSession(session, currentDate, transaction) {
     if (!session) {
-      throw error("session invalid");
+      return false;
     }
 
-    const validadteToken = isTokenValid(session.refreshToken.createdAt, currentDate);
+    const validadteToken = this.serviceToken.isTokenValid(session.refreshToken.createdAt, currentDate);
 
     if (!session.isValid) {
       return false;
@@ -104,4 +107,4 @@ class Session {
   }
 }
 
-module.exports = new Session();
+module.exports = new Session(repository, serviceToken, crypto);

@@ -41,7 +41,7 @@ class ServiceUser {
       throw this.error("no user with this id in this organization");
     }
 
-    const returnUser = JSON.parse(JSON.stringify(user));
+    const returnUser = {...user.dataValues};
     delete returnUser.password;
     return returnUser;
   }
@@ -178,23 +178,49 @@ class ServiceUser {
     }
 
     const token = await this.security.generateJwt(user)
-    const refreshToken = await serviceToken.createToken(transaction);
+    const {id: refreshTokenId, token: refreshToken, created} = await serviceToken.createToken(transaction);
 
-    await serviceSession.create(token, refreshToken[0].id, user.id, transaction)
 
-    return { token, refreshToken: refreshToken[1] }
-  }
+    await serviceSession.create(token, refreshTokenId, user.id, transaction)
+
+    return { token, refreshToken: {
+      refreshToken,
+      created
+    }
+   }
+  } 
 
   async logout(jwt, transaction) {
     return this.serviceSession.changeValidateSession(jwt, false, transaction)
   }
 
-  async getNewJwt(jwtToken, token, currentSession, transaction) {
-    const user = await this.findOne(currentSession.organizationId, currentSession.id, transaction)
+  async getNewJwt(jwt, user, refreshToken, transaction) {
     if (!user) {
       throw this.error('user not found')
     }
-    return await this.serviceSession.setJwt(jwtToken, token, user, transaction)
+
+    const session = await this.serviceSession.findSession(jwt, transaction)
+
+    if(!session) {
+      throw this.error('no sessions whith this jwt')
+    }
+
+    const isRefreshTokenCorrect = await this.security.compare(refreshToken, session.refreshToken.token)
+    if(!isRefreshTokenCorrect) {
+      throw this.error('invalid refreshToken')
+    }
+
+
+    const currentDate = new Date().getTime()
+    const isSessionValid = await this.serviceSession.validateSession(session, currentDate, transaction)
+
+    if(!isSessionValid) {
+      throw this.error('invalid Session')
+    }
+
+    const token = this.security.generateJwt(user)
+    await this.serviceSession.setJwt(session, token, transaction)
+    return token
 
   }
 

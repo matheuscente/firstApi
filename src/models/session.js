@@ -5,6 +5,12 @@ const database = require("../DataBase.js");
 class Session {
     constructor() {
         this.model = database.db.define("Session", {
+            id: {
+                type: database.db.Sequelize.INTEGER,
+                primaryKey: true,
+                autoIncrement: true
+            },
+            
             jwt: {
                 type: database.db.Sequelize.STRING,
                 unique: true

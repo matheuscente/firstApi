@@ -3,6 +3,7 @@ const serviceOrganization = require("../services/Organization.js");
 const database = require("../DataBase.js");
 const security = require('../services/crypto.js')
 const serviceSession = require('../services/session.js')
+const repository = require("../repository/repository.js")
 
 describe("create user test", () => {
   let transaction;
@@ -455,5 +456,56 @@ describe("verify test", () => {
     const verify = await service.verify(decoded.id, 'invalid role', transaction)
     expect(verify).toBe(null)
   })
+})
+
+describe("get new jwt test", () => {
+  let transaction;
+  let organization;
+  let user
+  let login,
+    session
+
+  beforeEach(async () => {
+    transaction = await database.db.transaction();
+    organization = await serviceOrganization.create(
+      "teste",
+      "teste",
+      "teste",
+      "teste",
+      transaction
+    );
+
+    user = await service.create({
+      organization,
+      name: `teste`,
+      email: `testeUser`,
+      password: `teste`,
+      role: `employee`,
+    }, transaction)
+
+    login = await service.login(user.email, 'teste', transaction)
+  });
+
+  afterEach(async () => {
+    await transaction.rollback();
+  });
+
+  it('success', async () => {
+    const repoSession = new repository(require("../models/session.js"))
+    const token = login.token
+    session = await serviceSession.findSession(token, transaction)
+    console.log(session)
+    const idSession = session.id
+    console.log(idSession)
+    const refreshToken = login.refreshToken.refreshToken
+    const getNewJwt = await service.getNewJwt(token, user, refreshToken, transaction)
+    session = await repoSession.findOne({id: idSession}, transaction)
+
+    
+    expect(getNewJwt).toBe(session.jwt)
+
+
+  })
+
 })
 

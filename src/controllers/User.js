@@ -1,5 +1,5 @@
 const service = require("../services/User.js");
-const serviceSession = require('../services/session.js')
+const serviceOrganization = require('../services/Organization.js')
 
 class ApiUser {
   async findAll(req, res) {
@@ -39,14 +39,14 @@ class ApiUser {
 
   async create(req, res) {
     try {
-      const organizationId = req.session.organizationId
+      const organization = await serviceOrganization.findOne(req.session.organizationId)
       const { name, email, password, role } = req.body;
-      const user = await service.create(
-        organizationId,
+      const user = await service.create({
+        organization,
         name,
         email,
         password,
-        role
+        role}
       );
       res.status(201).json({ created: user });
     } catch (err) {
@@ -110,7 +110,7 @@ class ApiUser {
 
       const token = await service.login(email, password)
 
-      res.status(200).json({token: token})
+      res.status(200).json({data: token})
     } catch(err) {
         if (err.code === 1) {
           res.status(400).json({ error: err.message });
@@ -138,13 +138,12 @@ class ApiUser {
   }
 
   async getNewJwt(req, res) {
-    console.log(req.session)
    try {
-    const session = req.session
-    
+    console.log(req.session)
+    const user = await service.findOne(req.session.organizationId, req.session.id)
     const jwt = req.headers['authorization']
     const {token} = req.body
-    const newJwt = await service.getNewJwt(jwt, token, session)
+    const newJwt = await service.getNewJwt(jwt, user, token)
     res.status(200).json({newJwt})
    } catch(err) {
     if (err.code === 1) {
