@@ -334,8 +334,7 @@ describe("login test", () => {
     const { token } = login
     console.log(login)
     const decoded = security.verifyJwt(token)
-    console.log(decoded)
-    const { id, organizationId, role } = decoded
+    const { id, organizationId, role } = decoded.decoded
     expect(id).toBe(user.id)
     expect(organizationId).toBe(user.organizationId)
     expect(role).toBe(user.role)
@@ -386,8 +385,8 @@ describe("logout test", () => {
   });
 
   it('success', async () => {
-    const { token } = login
-    const logout = await service.logout(token, transaction)
+    const { token, refreshToken} = login
+    const logout = await service.logout(token, refreshToken, transaction)
     const session = await serviceSession.findSession(token, transaction)
     expect(logout.id).toBe(session.id)
     expect(logout.isValid).toBe(session.isValid)
@@ -395,9 +394,17 @@ describe("logout test", () => {
   })
 
   it('failed because there is no session bound to jwt or the session is invalid', async () => {
-    const { token } = login
-    const logout = service.logout("99999", transaction)
+    const {refreshToken} = login
+    const logout = service.logout("99999", refreshToken, transaction)
     await expect(logout).rejects.toThrow("session invalid")
+
+
+  })
+
+  it('failed because refresh token is invalid', async () => {
+    const {token} = login
+    const logout = service.logout(token, "99999", transaction)
+    await expect(logout).rejects.toThrow("permission denied")
 
 
   })
@@ -437,23 +444,23 @@ describe("verify test", () => {
   it('success', async () => {
     const { token } = login
     const decoded = security.verifyJwt(token)
-    const verify = await service.verify(decoded.id, decoded.role, transaction)
-    expect(verify.id).toBe(decoded.id)
-    expect(verify.role).toBe(decoded.role)
+    const verify = await service.verify(decoded.decoded.id, decoded.decoded.role, transaction)
+    expect(verify.id).toBe(decoded.decoded.id)
+    expect(verify.role).toBe(decoded.decoded.role)
   })
 
   
   it('fail for invalid id', async () => {
     const { token } = login
     const decoded = security.verifyJwt(token)
-    const verify = await service.verify(99999, decoded.role, transaction)
+    const verify = await service.verify(99999, decoded.decoded.role, transaction)
     expect(verify).toBe(null)
   })
 
   it('fail for invalid role', async () => {
     const { token } = login
     const decoded = security.verifyJwt(token)
-    const verify = await service.verify(decoded.id, 'invalid role', transaction)
+    const verify = await service.verify(decoded.decoded.id, 'invalid role', transaction)
     expect(verify).toBe(null)
   })
 })
@@ -494,10 +501,8 @@ describe("get new jwt test", () => {
     const repoSession = new repository(require("../models/session.js"))
     const token = login.token
     session = await serviceSession.findSession(token, transaction)
-    console.log(session)
     const idSession = session.id
-    console.log(idSession)
-    const refreshToken = login.refreshToken.refreshToken
+    const refreshToken = login.refreshToken
     const getNewJwt = await service.getNewJwt(token, user, refreshToken, transaction)
     session = await repoSession.findOne({id: idSession}, transaction)
 

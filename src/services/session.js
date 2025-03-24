@@ -1,110 +1,91 @@
-
-const serviceToken = require("./refreshToken.js");
 const error = require("../fns/error.js");
-const repository = require('../repository/repository.js')
-const crypto = require('../services/crypto.js')
-const modelSession = require('../models/session.js')
+const repository = require("../repository/repository.js");
+const crypto = require("../services/crypto.js");
 
+const salt = 10;
 
-class Session { 
-  constructor (repository, serviceToken, crypto) {
-    this.repository = new repository(require('../models/session.js'), require('../models/refreshToken.js'))
-    this.serviceToken = serviceToken,
-    this.security = crypto
-
+class Session {
+  constructor(repository, crypto, error) {
+    this.repository = repository
+    this.security = crypto;
+    this.error = error;
   }
-  async create(jwt, refreshTokenId, userId , transaction) {
-    if(!refreshTokenId) {
-      throw error('invalid refresh token')
-    } else if(!userId) {
-      throw error('invalid user')
+  async create(jwt, userId, transaction) {
+    if (!jwt) {
+      throw error("invalid jwt");
+    } else if (!userId) {
+      throw error("invalid user");
     }
 
-    const isJwtValid = await this.security.verifyJwt(jwt)
-    if(!isJwtValid.isValid) {
-      throw error('token invalid or not provided')
+    const isJwtValid = this.security.verifyJwt(jwt);
+    if (!isJwtValid.isValid) {
+      throw error("token invalid or not provided");
     }
+    const refreshToken = this.security.randomicPass();
+    const hashedToken = await this.security.hash(refreshToken, salt);
 
-    try {
-      const session = await modelSession.create(
-        { jwt, refreshTokenId, userId, isValid: true },
-        { transaction }
-      );
-      return session;
-    } catch (err) {
-      console.log(err);
-    }
-  }
-
-  async findSession(jwt, transaction) {
-    const session = await modelSession.findOne({where: {jwt}
-    ,
-    transaction,}
+    const session = await this.repository.create(
+      { jwt, refreshToken: hashedToken, userId, isValid: true },
+      transaction
     );
+    return {refreshToken,
+      createdAt: session.createdAt};
+  }
+
+  async findAllUserSessions(userId, transaction) {
+    const session = await this.repository.findAll({ userId }, transaction);
 
     return session;
   }
 
-  async deleteSession(jwt, transaction) {
-    const session = await this.findSession(jwt, transaction);
-    return session.destroy(transaction);
+  async findSession(jwt, transaction) {
+    const session = await this.repository.findOne({ jwt }, transaction);
+
+    return session;
   }
 
-  async setToken(jwt, token, transaction) {
-    const session = await this.findSession(jwt, transaction);
-    const refreshToken = session.refreshToken.token;
-    const isTokenValid = await this.security.compare(token, refreshToken);
-
-    if (!isTokenValid) {
-      throw error("invalid jwt or refresh token");
-    }
-
-    const newToken = await this.serviceToken.createToken(transaction);
-    session.token = newToken[0].id;
-    await session.save({ transaction });
-    return newToken[1];
+  async deleteSession(session, transaction) {
+    return this.repository.delete(session, transaction);
   }
 
-  async setJwt(session, token, transaction) {
-    if(!session) {
-      throw error("invalid session")
-    } else if(!token) {
-      throw error("invalid token")
-    }
-
-    session.jwt = token;
-    await session.save({ transaction });
-    return token;
-  }
-
-  async changeValidateSession(jwt,validate, transaction) {
-    const session = await modelSession.findOne({ where: { jwt }, transaction });
-    if(!session) {
-      throw error("session invalid");
-    }
-    session.isValid = validate;
-    return session.save({ transaction });
-  }
-
-  async validateSession(session, currentDate, transaction) {
+  async update(session, field, value, transaction) {
     if (!session) {
-      return false;
+      throw error("invalid session");
     }
 
-    const validadteToken = this.serviceToken.isTokenValid(session.refreshToken.createdAt, currentDate);
-
-    if (!session.isValid) {
-      return false;
+    if (field === "jwt") {
+      return this.repository.update(session, field, value, transaction);
+    } else if (field === "isValid") {
+      if (typeof value !== "boolean") {
+        throw this.error("value invalid to modification");
+      }
+      return this.repository.update(session, field, value, transaction);
     }
+    throw error("invalid field to modification");
+  }
 
-    if (!validadteToken) {
-      session.isValid = false;
-      await session.save({transaction})
-      return false;
+  async isSessionValid(session) {
+    if(!session.isValid) {
+      return false
     }
+    const currentDate = Date.now()
+    let dateCreate = session.createdAt;
+    const day = 86400000;
+    let validate = day * 7;
+    dateCreate = dateCreate.getTime();
+    validate = dateCreate + validate;
 
-    return true;
+    const isValid = validate > currentDate;
+
+    if(!isValid) {
+      await this.update(session, 'isValid', false, transaction)
+      return false
+    }
+    return true
   }
 }
 
-module.exports = new Session(repository, serviceToken, crypto);
+module.exports = new Session(new repository(
+  require("../models/session.js"),
+  [require("../models/User.js")]
+), crypto, error);

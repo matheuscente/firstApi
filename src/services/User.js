@@ -1,13 +1,12 @@
 const error = require("../fns/error.js");
 const verifyOrganization = require("../fns/verifyOrganization.js");
-const serviceToken = require("./refreshToken.js");
 const serviceSession = require('./session.js')
 const repository = require('../repository/repository.js')
 const crypto = require('./crypto.js')
 
 const salt = 10;
 class ServiceUser {
-  constructor(repository, error, verifyOrganization, serviceToken, serviceSession, crypto) {
+  constructor(repository, error, verifyOrganization, serviceSession, crypto) {
     this.repository = repository
     this.security = crypto
     this.error = error
@@ -120,7 +119,11 @@ class ServiceUser {
         user.role = value;
         await user.save();
 
-        const token = generateJwt(user)
+        const token = generateJwt({
+          id: user.id,
+          organizationId: user.organizationId,
+          role: user.role
+        }, 60 * 60)
 
         return {
           user: await this.findOne(organizationId, id, transaction),
@@ -177,21 +180,32 @@ class ServiceUser {
       throw this.error("invalid email or password");
     }
 
-    const token = await this.security.generateJwt(user)
-    const {id: refreshTokenId, token: refreshToken, created} = await serviceToken.createToken(transaction);
+    const token =  this.security.generateJwt({
+      id: user.id,
+      organizationId: user.organizationId,
+      role: user.role
+    }, 60 * 60)
 
+   const session =  await serviceSession.create(token, user.id, transaction)
 
-    await serviceSession.create(token, refreshTokenId, user.id, transaction)
-
-    return { token, refreshToken: {
-      refreshToken,
-      created
+    return { token,
+      refreshToken: session.refreshToken,
+      createdAt: session.createdAt
     }
-   }
   } 
 
-  async logout(jwt, transaction) {
-    return this.serviceSession.changeValidateSession(jwt, false, transaction)
+  async logout(jwt, refreshToken, transaction) {
+    const session = await this.serviceSession.findSession(jwt, transaction)
+    if(!session) {
+      throw this.error("session invalid")
+    }
+    const isRTvalid = await this.security.compare(refreshToken, session.refreshToken)
+
+    if(!isRTvalid) {
+      throw this.error('permission denied')
+    }
+
+    return this.serviceSession.update(session, "isValid", false, transaction)
   }
 
   async getNewJwt(jwt, user, refreshToken, transaction) {
@@ -204,23 +218,24 @@ class ServiceUser {
     if(!session) {
       throw this.error('no sessions whith this jwt')
     }
-
-    const isRefreshTokenCorrect = await this.security.compare(refreshToken, session.refreshToken.token)
+    const isRefreshTokenCorrect = await this.security.compare(refreshToken, session.refreshToken)
     if(!isRefreshTokenCorrect) {
       throw this.error('invalid refreshToken')
     }
-
-
-    const currentDate = new Date().getTime()
-    const isSessionValid = await this.serviceSession.validateSession(session, currentDate, transaction)
+    const isSessionValid = await this.serviceSession.isSessionValid(session)
 
     if(!isSessionValid) {
       throw this.error('invalid Session')
     }
 
-    const token = this.security.generateJwt(user)
-    await this.serviceSession.setJwt(session, token, transaction)
-    return token
+    const token = this.security.generateJwt({
+      id: user.id,
+      organizationId: user.organizationId,
+      role: user.role
+    }, 60 * 60)
+    const updated = await this.serviceSession.update(session, "jwt" ,token, transaction)
+
+    return updated.jwt
 
   }
 
@@ -231,4 +246,4 @@ class ServiceUser {
   }
 }
 
-module.exports = new ServiceUser(new repository(require('../models/User.js'), [require('../models/Organization.js')]), error, verifyOrganization, serviceToken, serviceSession, crypto);
+module.exports = new ServiceUser(new repository(require('../models/User.js'), [require('../models/Organization.js')]), error, verifyOrganization, serviceSession, crypto);

@@ -1,5 +1,4 @@
 const modelUser = require('./User.js')
-const modelToken = require('./refreshToken.js')
 const database = require("../DataBase.js");
 
 class Session {
@@ -16,14 +15,10 @@ class Session {
                 unique: true
             },
 
-            refreshTokenId: {
-                type: database.db.Sequelize.INTEGER,
+            refreshToken: {
+                type: database.db.Sequelize.STRING,
                 unique: true,
                 allowNull: false,
-                references: {
-                    model: modelToken,
-                    key: "id"
-                }
             },
 
             userId: {
@@ -44,16 +39,9 @@ class Session {
         this.model.belongsTo(modelUser, {
             foreignKey: "userId"
         })
-        this.model.belongsTo(modelToken, {
-            foreignKey: "refreshTokenId"
-        })
 
         modelUser.hasMany(this.model, {
             foreignKey: "userId"
-        })
-
-        modelToken.hasOne(this.model, {
-            foreignKey: "refreshTokenId"
         })
     }
 }

@@ -38,15 +38,11 @@ class Crypto {
         return this.crypto.randomBytes(10).toString('hex')
     }
 
-    generateJwt(user) {
+    generateJwt(payload, exp) {
         return this.tokenModule.sign(
-            {
-                id: user.id,
-                organizationId: user.organizationId,
-                role: user.role,
-            },
+            {...payload},
             key,
-            { expiresIn: 60 * 60 }
+            { expiresIn: exp}
         );
 
     }
@@ -70,7 +66,7 @@ class Crypto {
             if (err instanceof jwt.TokenExpiredError) {
                 return {
                     isValid: false,
-                    decoded: ''
+                    decoded: 'tokenExpired'
                 }
             }
             return {
