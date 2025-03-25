@@ -1,52 +1,52 @@
 const error = require("../fns/error.js");
 const verifyOrganization = require("../fns/verifyOrganization.js");
-const serviceSession = require('./session.js')
-const repository = require('../repository/repository.js')
-const crypto = require('./crypto.js')
+const serviceSession = require("./session.js");
+const repository = require("../repository/repositoryUser.js");
+const crypto = require("./crypto.js");
 
 const salt = 10;
 class ServiceUser {
   constructor(repository, error, verifyOrganization, serviceSession, crypto) {
-    this.repository = repository
-    this.security = crypto
-    this.error = error
-    this.verifyOrganization = verifyOrganization
-    this.serviceSession = serviceSession
+    this.repository = repository;
+    this.security = crypto;
+    this.error = error;
+    this.verifyOrganization = verifyOrganization;
+    this.serviceSession = serviceSession;
   }
   async findAll(organizationId, transaction) {
     await verifyOrganization(organizationId, transaction);
 
-    const users = await this.repository.findAll({organizationId}, transaction);
+    const users = await this.repository.findAllWithOutSensibleFields(
+      { organizationId },
+      transaction
+    );
 
     if (users.length === 0) {
       throw this.error("no have users in this organization");
     }
 
-    const returnUsers = [...users];
-    for (const user in returnUsers) {
-      delete returnUsers[user].password;
-    }
-    return returnUsers;
+    return users
   }
 
   async findOne(organizationId, id, transaction) {
     if (!id || isNaN(id)) {
       throw this.error("invalid userId");
     }
-    await this.verifyOrganization(organizationId, transaction)
-    const user = await this.repository.findOne({organizationId, id}, transaction);
+    await this.verifyOrganization(organizationId, transaction);
+    const user = await this.repository.findOneWithOutSensibleFields(
+      { organizationId, id },
+      transaction
+    );
 
     if (!user) {
       throw this.error("no user with this id in this organization");
     }
-
-    const returnUser = {...user.dataValues};
-    delete returnUser.password;
-    return returnUser;
+    console.log(user)
+    return user
   }
 
   async create(data, transaction) {
-    const {organization, name, email, password, role} = data
+    const { organization, name, email, password, role } = data;
     if (!organization.id) {
       throw this.error("organization not found");
     }
@@ -70,23 +70,28 @@ class ServiceUser {
       throw this.error("invalid role");
     }
 
+    const user = await this.repository.create(
+      {
+        organizationId: organization.id,
+        name,
+        email,
+        password: hashedPass,
+        role,
+      },
+      transaction
+    );
 
-    const user = await this.repository.create({
-      organizationId: organization.id,
-      name,
-      email,
-      password: hashedPass,
-      role,
-    }, transaction);
-
-    return this.findOne(user.organizationId, user.id, transaction);
+    
+    return user
   }
 
   async update(organizationId, id, field, value, transaction) {
     await verifyOrganization(organizationId, transaction);
 
-
-    const user = await modelUser.findOne({ where: { organizationId, id } , transaction });
+    const user = await modelUser.findOne({
+      where: { organizationId, id },
+      transaction,
+    });
 
     if (!user) {
       throw this.error("this user don't exists");
@@ -119,11 +124,14 @@ class ServiceUser {
         user.role = value;
         await user.save();
 
-        const token = generateJwt({
-          id: user.id,
-          organizationId: user.organizationId,
-          role: user.role
-        }, 60 * 60)
+        const token = generateJwt(
+          {
+            id: user.id,
+            organizationId: user.organizationId,
+            role: user.role,
+          },
+          60 * 60
+        );
 
         return {
           user: await this.findOne(organizationId, id, transaction),
@@ -148,17 +156,10 @@ class ServiceUser {
     }
   }
 
-  async delete(organizationId, id, transaction) {
-    await this.verifyOrganization(organizationId, transaction);
-    const user = await this.repository.findOne({organizationId, id} ,  transaction );
-
-    if (!user) {
-      throw this.error("no user with this id in this organization");
-    }
-
-    const returnUser = JSON.parse(JSON.stringify(user));
+  async delete(user, transaction) {
+    const deletedUser = await this.repository.delete(await this.repository.findOne({id: user.id}, transaction), transaction);
+    const returnUser = {...deletedUser.dataValues}
     delete returnUser.password;
-    await this.repository.delete(user, transaction);
     return returnUser;
   }
 
@@ -166,12 +167,10 @@ class ServiceUser {
     if (!email || !password) {
       throw this.error("email or password not provided");
     }
-    const user = await this.repository.findOne({email},  transaction );
+    const user = await this.repository.findOne({ email }, transaction);
 
     if (!user) {
-
       throw this.error("invalid email or password");
-
     }
 
     const credentialsOk = await this.security.compare(password, user.password);
@@ -180,77 +179,104 @@ class ServiceUser {
       throw this.error("invalid email or password");
     }
 
-    const token =  this.security.generateJwt({
-      id: user.id,
-      organizationId: user.organizationId,
-      role: user.role
-    }, 60 * 60)
+    const token = this.security.generateJwt(
+      {
+        id: user.id,
+        organizationId: user.organizationId,
+        role: user.role,
+      },
+      60 * 60
+    );
 
-   const session =  await serviceSession.create(token, user.id, transaction)
+    const session = await serviceSession.create(token, user.id, transaction);
 
-    return { token,
+    return {
+      token,
       refreshToken: session.refreshToken,
-      createdAt: session.createdAt
-    }
-  } 
+      createdAt: session.createdAt,
+    };
+  }
 
   async logout(jwt, refreshToken, transaction) {
-    const session = await this.serviceSession.findSession(jwt, transaction)
-    
-    if(!session) {
-      throw this.error("session invalid")
-    }
-    const sessionRefreshToken = await this.serviceSession.getRefreshToken(session)
-    if(!refreshToken) {
-      throw this.error("refresh token invalid or not provided")
-    }
-    const isRTvalid = await this.security.compare(refreshToken, sessionRefreshToken)
+    const session = await this.serviceSession.findSession(jwt, transaction);
 
-    if(!isRTvalid) {
-      throw this.error('permission denied')
+    if (!session) {
+      throw this.error("session invalid");
+    }
+    const sessionRefreshToken = await this.serviceSession.getRefreshToken(
+      session,
+      transaction
+    );
+    if (!refreshToken) {
+      throw this.error("refresh token invalid or not provided");
+    }
+    const isRTvalid = await this.security.compare(
+      refreshToken,
+      sessionRefreshToken
+    );
+
+    if (!isRTvalid) {
+      throw this.error("permission denied");
     }
 
-    return this.serviceSession.update(session, "isValid", false, transaction)
+    return this.serviceSession.update(session, "isValid", false, transaction);
   }
 
-  async getNewJwt(jwt, user, refreshToken, transaction) {
-    if (!user) {
-      throw this.error('user not found')
+  async getNewJwt(session, refreshToken, transaction) {
+    if (!session) {
+      throw this.error("session not found");
     }
 
-    const session = await this.serviceSession.findSession(jwt, transaction)
-    
+    const user = session.user;
 
-    if(!session) {
-      throw this.error('no sessions whith this jwt')
+    const sessionRefreshToken = await this.serviceSession.getRefreshToken(
+      session,
+      transaction
+    );
+    const isRefreshTokenCorrect = await this.security.compare(
+      refreshToken,
+      sessionRefreshToken
+    );
+    if (!isRefreshTokenCorrect) {
+      throw this.error("invalid refreshToken");
     }
-    const sessionRefreshToken = await this.serviceSession.getRefreshToken(session)
-    const isRefreshTokenCorrect = await this.security.compare(refreshToken, sessionRefreshToken)
-    if(!isRefreshTokenCorrect) {
-      throw this.error('invalid refreshToken')
-    }
-    const isSessionValid = await this.serviceSession.isSessionValid(session)
+    const isSessionValid = await this.serviceSession.isSessionValid(
+      session,
+      transaction
+    );
 
-    if(!isSessionValid) {
-      throw this.error('invalid Session')
+    if (!isSessionValid) {
+      throw this.error("invalid Session");
     }
 
-    const token = this.security.generateJwt({
-      id: user.id,
-      organizationId: user.organizationId,
-      role: user.role
-    }, 60 * 60)
-    const updated = await this.serviceSession.update(session, "jwt" ,token, transaction)
-
-    return updated.jwt
-
+    const token = this.security.generateJwt(
+      {
+        id: user.id,
+        organizationId: user.organizationId,
+        role: user.role,
+      },
+      60 * 60
+    );
+    const updated = await this.serviceSession.update(
+      session,
+      "jwt",
+      token,
+      transaction
+    );
+    return updated.jwt;
   }
-
-
 
   async verify(id, role, transaction) {
-    return await this.repository.findOne({ id, role } ,  transaction);
+    return await this.repository.findOne({ id, role }, transaction);
   }
 }
 
-module.exports = new ServiceUser(new repository(require('../models/User.js'), [require('../models/Organization.js')]), error, verifyOrganization, serviceSession, crypto);
+module.exports = new ServiceUser(
+  new repository(require("../models/User.js"),
+    require("../models/Organization.js"),
+  ),
+  error,
+  verifyOrganization,
+  serviceSession,
+  crypto
+);

@@ -1,30 +1,13 @@
-
-
 class Repository {
-    constructor(model, models) {
+    constructor(model) {
         this.model = model
-        this.alternativeModels = models
     }
 
     async findAll(whereParams, transaction) {
-        if(this.alternativeModels) {
-                const models = this.alternativeModels.map((model) => {
-                    return {model: model}
-                })
-                return this.model.findAll({where: whereParams, include: [...models], transaction})
-            
-        }
         return this.model.findAll({where: whereParams, transaction})
     }
 
     async findOne(whereParams, transaction) {
-        if(this.alternativeModels) {
-            const models = this.alternativeModels.map((model) => {
-                return {model: model}
-            })
-            return this.model.findOne({where: whereParams, include: [...models], transaction})
-        
-    }
         return this.model.findOne({where: whereParams, transaction})
     }
 

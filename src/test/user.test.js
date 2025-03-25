@@ -3,7 +3,7 @@ const serviceOrganization = require("../services/Organization.js");
 const database = require("../DataBase.js");
 const security = require('../services/crypto.js')
 const serviceSession = require('../services/session.js')
-const repository = require("../repository/repository.js")
+const repository = require("../repository/repositoryOrganization.js")
 
 describe("create user test", () => {
   let transaction;
@@ -135,6 +135,7 @@ describe("find one user test", () => {
       user.id,
       transaction
     );
+    console.log(user)
     expect(findUser.name).toBe(user.name);
     expect(findUser.email).toBe(user.email);
     expect(findUser.role).toBe(user.role);
@@ -283,22 +284,13 @@ describe("delete test", () => {
   });
 
   it('sucess', async () => {
-    const deletedUser = await service.delete(organization.id, user.id, transaction)
+    const deletedUser = await service.delete(user, transaction)
     const findUser = service.findOne(organization.id, deletedUser.id, transaction)
     expect(deletedUser.id).toBe(user.id)
     await expect(findUser).rejects.toThrow('no user with this id in this organization')
 
   })
 
-  it('failed to find organizations with the given id', async () => {
-    const deletedUser = service.delete(9999, user.id, transaction)
-    await expect(deletedUser).rejects.toThrow('no organization in this id')
-  })
-
-  it('failed to find users with the given id', async () => {
-    const deletedUser = service.delete(organization.id, 9999, transaction)
-    await expect(deletedUser).rejects.toThrow('no user with this id in this organization')
-  })
 })
 
 describe("login test", () => {
@@ -332,7 +324,6 @@ describe("login test", () => {
   it('sucess', async () => {
     const login = await service.login(user.email, "teste", transaction)
     const { token } = login
-    console.log(login)
     const decoded = security.verifyJwt(token)
     const { id, organizationId, role } = decoded.decoded
     expect(id).toBe(user.id)
@@ -503,7 +494,7 @@ describe("get new jwt test", () => {
     session = await serviceSession.findSession(token, transaction)
     const idSession = session.id
     const refreshToken = login.refreshToken
-    const getNewJwt = await service.getNewJwt(token, user, refreshToken, transaction)
+    const getNewJwt = await service.getNewJwt(session, refreshToken, transaction)
     session = await repoSession.findOne({id: idSession}, transaction)
 
     

@@ -1,7 +1,7 @@
 const serviceUser = require("./User.js");
 const error = require("../fns/error.js");
-const repository = require("../repository/repository.js");
-const crypto = require('./crypto.js')
+const repository = require("../repository/repositoryOrganization.js");
+const crypto = require('./crypto.js');
 
 class ServiceOrganization {
   constructor(error, serviceUser, repositoryOrganization, crypto) {
@@ -35,8 +35,9 @@ class ServiceOrganization {
         throw error(`${fieldName} invalid or not provided`);
       }
     }
+  const organization = await this.repository.create( {name, address, phone, email} , transaction );
     
-    const organization = await this.repository.create( {name, address, phone, email} ,transaction );
+    
     const password = this.security.randomicPass()
 
     let admin = await this.serviceUser.create({
