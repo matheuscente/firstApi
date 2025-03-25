@@ -196,10 +196,15 @@ class ServiceUser {
 
   async logout(jwt, refreshToken, transaction) {
     const session = await this.serviceSession.findSession(jwt, transaction)
+    
     if(!session) {
       throw this.error("session invalid")
     }
-    const isRTvalid = await this.security.compare(refreshToken, session.refreshToken)
+    const sessionRefreshToken = await this.serviceSession.getRefreshToken(session)
+    if(!refreshToken) {
+      throw this.error("refresh token invalid or not provided")
+    }
+    const isRTvalid = await this.security.compare(refreshToken, sessionRefreshToken)
 
     if(!isRTvalid) {
       throw this.error('permission denied')
@@ -214,11 +219,13 @@ class ServiceUser {
     }
 
     const session = await this.serviceSession.findSession(jwt, transaction)
+    
 
     if(!session) {
       throw this.error('no sessions whith this jwt')
     }
-    const isRefreshTokenCorrect = await this.security.compare(refreshToken, session.refreshToken)
+    const sessionRefreshToken = await this.serviceSession.getRefreshToken(session)
+    const isRefreshTokenCorrect = await this.security.compare(refreshToken, sessionRefreshToken)
     if(!isRefreshTokenCorrect) {
       throw this.error('invalid refreshToken')
     }

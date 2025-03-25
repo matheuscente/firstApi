@@ -1,22 +1,23 @@
 const express = require("express");
 const controller = require("../controllers/User.js");
-const auth = require('../middleware/auth.js')
+const middleware = require('../middleware/middleware.js')
+
 
 const route = express.Router();
 
 // adm options
-route.get("/admin", auth('admin'), controller.findAll);
-route.get("/admin/:id",auth('admin'), controller.findOne);
-route.post("/admin",auth('admin'), controller.create);
-route.patch("/admin/:id",auth('admin'), controller.update);
-route.delete("/admin/:id",auth('admin'), controller.delete);
+route.get("/admin", middleware.auth('admin'), controller.findAll);
+route.get("/admin/:id",middleware.auth('admin'), controller.findOne);
+route.post("/admin",middleware.auth('admin'), controller.create);
+route.patch("/admin/:id",middleware.auth('admin'), controller.update);
+route.delete("/admin/:id",middleware.auth('admin'), controller.delete);
 
 //user options
-route.get("/info",auth(), controller.findOne);
-route.patch("/update",auth(), controller.update);
-route.patch("/info",auth(), controller.findOne);
-route.post("/logout", auth(), controller.logout)
-route.post("/newJwt", auth(), controller.getNewJwt)
+route.get("/info",middleware.auth(), controller.findOne);
+route.patch("/update",middleware.auth(), controller.update);
+route.patch("/info",middleware.auth(), controller.findOne);
+route.post("/logout", middleware.auth(), controller.logout)
+route.post("/newJwt", middleware.authNewJwt(), controller.getNewJwt)
 
 
 module.exports = route;

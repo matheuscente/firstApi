@@ -1,13 +1,13 @@
 const express = require("express");
 const controller = require("../controllers/Product.js");
-const auth = require('../middleware/auth.js')
+const middleware = require('../middleware/middleware.js')
 
 const route = express.Router();
 
-route.get("/",auth(), controller.findAll);
-route.get("/:id",auth(), controller.findOne);
-route.post("/",auth(), controller.create);
-route.patch("/:id",auth(), controller.update);
-route.delete("/:id",auth(), controller.delete);
+route.get("/",middleware.auth(), controller.findAll);
+route.get("/:id",middleware.auth(), controller.findOne);
+route.post("/",middleware.auth(), controller.create);
+route.patch("/:id",middleware.auth(), controller.update);
+route.delete("/:id",middleware.auth(), controller.delete);
 
 module.exports = route;

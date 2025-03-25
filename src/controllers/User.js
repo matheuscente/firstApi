@@ -123,9 +123,9 @@ class ApiUser {
 
   async logout(req, res) {
     try {
+      const {refreshToken} = req.body
       const jwt = req.headers['authorization']
-      console.log(jwt)
-      const session = await service.logout(jwt)
+      const session = await service.logout(jwt, refreshToken)
       res.status(200).json({session})
     } catch(err) {
       if (err.code === 1) {

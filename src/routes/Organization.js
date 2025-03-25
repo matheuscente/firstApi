@@ -1,12 +1,11 @@
 const express = require("express");
 const controller = require("../controllers/Organization.js");
-const auth = require('../middleware/auth.js')
+const middleware = require('../middleware/middleware.js')
 
 const route = express.Router();
 
-route.get("/",auth(), controller.findOne);
-route.post("/", controller.create);
-route.patch("/",auth(), controller.update);
-route.delete("/",auth(), controller.delete);
+route.get("/",middleware.auth(), controller.findOne);
+route.patch("/",middleware.auth(), controller.update);
+route.delete("/",middleware.auth(), controller.delete);
 
 module.exports = route;

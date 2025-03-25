@@ -39,9 +39,22 @@ class Session {
   }
 
   async findSession(jwt, transaction) {
+    console.log(jwt)
     const session = await this.repository.findOne({ jwt }, transaction);
+    console.log(session)
+    if(!session) {
+      throw this.error('session invalid')
+    }
 
-    return session;
+    return session
+  }
+
+  async getRefreshToken(session, transaction) {
+   const jwt = session.dataValues.jwt
+    const sessionAllFields = await this.findSession( jwt, transaction) 
+    console.log(sessionAllFields)
+    const refreshToken = sessionAllFields.refreshToken
+    return refreshToken
   }
 
   async deleteSession(session, transaction) {
@@ -54,12 +67,14 @@ class Session {
     }
 
     if (field === "jwt") {
-      return this.repository.update(session, field, value, transaction);
+      await this.repository.update(session, field, value, transaction);
+      return this.findSession(value, transaction)
     } else if (field === "isValid") {
       if (typeof value !== "boolean") {
         throw this.error("value invalid to modification");
       }
-      return this.repository.update(session, field, value, transaction);
+      await this.repository.update(session, field, value, transaction);
+      return this.findSession(session.jwt, transaction)
     }
     throw error("invalid field to modification");
   }

@@ -38,6 +38,13 @@ class Crypto {
         return this.crypto.randomBytes(10).toString('hex')
     }
 
+    decodePayload(token) {
+        const parts = token.split('.')
+        let payload = parts[1]
+        payload = Buffer.from(payload, 'base64').toString('utf-8')
+        return JSON.parse(payload)
+    }
+
     generateJwt(payload, exp) {
         return this.tokenModule.sign(
             {...payload},
@@ -47,11 +54,13 @@ class Crypto {
 
     }
 
-     decodeJwtPayload(token) {
-        const payload = token.split('.')[1];
-        const decodedPayload = JSON.parse(atob(payload));
-        return decodedPayload;
-      }
+    decodePayload(token) {
+        const parts = token.split('.');
+        let payload = parts[1];
+        payload = Buffer.from(payload, 'base64').toString('utf-8');
+        return JSON.parse(payload);
+    }
+
       
 
     verifyJwt(token) {
