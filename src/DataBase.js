@@ -12,7 +12,8 @@ class DataBase {
       host: process.env.DB_HOST,
       dialect: process.env.DB_DIALECT,
       username: process.env.DB_USERNAME,
-      password: ""
+      password: "",
+      logging: false
     });
   }
 }

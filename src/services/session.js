@@ -1,5 +1,5 @@
 const error = require("../fns/error.js");
-const repository = require("../repository/repositoryUser.js");
+const repository = require("../repository/repository.js");
 const crypto = require("../services/crypto.js");
 
 const salt = 10;
@@ -24,6 +24,7 @@ class Session {
     const refreshToken = this.security.randomicPass();
     const hashedToken = await this.security.hash(refreshToken, salt);
 
+      console.log(jwt, hashedToken, userId)
     const session = await this.repository.create(
       { jwt, refreshToken: hashedToken, userId, isValid: true },
       transaction
@@ -49,11 +50,7 @@ class Session {
     if (!session) {
       throw this.error("session invalid");
     }
-    const returnSession = { ...session.dataValues };
-    delete returnSession.userId;
-    delete returnSession.user.dataValues.password;
-    delete returnSession.refreshToken;
-    return returnSession;
+    return session
   }
 
   async getRefreshToken(session, transaction) {
@@ -61,7 +58,7 @@ class Session {
       throw this.error("invalid session");
     }
     const jwt = session.jwt;
-    const sessionAllFields = await this.repository.findOne(
+    const sessionAllFields = await this.repository.findOneWithSensibleFields(
       { jwt },
       transaction
     );
@@ -70,10 +67,7 @@ class Session {
   }
 
   async deleteSession(session, transaction) {
-    const deletedSession = this.repository.delete(session, transaction);
-    const returnSession = { ...deletedSession };
-    delete returnSession.user.password;
-    return returnSession;
+    return this.repository.delete(session, transaction);
   }
 
   async update(session, field, value, transaction) {
@@ -130,8 +124,7 @@ class Session {
 }
 
 module.exports = new Session(
-  new repository(require("../models/session.js"), 
-    require("../models/User.js"),
+  new repository(require("../models/session.js")
   ),
   crypto,
   error

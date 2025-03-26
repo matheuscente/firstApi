@@ -3,7 +3,7 @@ const serviceOrganization = require("../services/Organization.js");
 const database = require("../DataBase.js");
 const security = require('../services/crypto.js')
 const serviceSession = require('../services/session.js')
-const repository = require("../repository/repositoryOrganization.js")
+const repository = require("../repository/repository.js")
 
 describe("create user test", () => {
   let transaction;
@@ -33,6 +33,7 @@ describe("create user test", () => {
       role: "employee",
     };
     const user = await service.create(fields, transaction);
+    
     expect(user.organizationId).toBe(organization.id);
     expect(user.name).toBe("teste");
     expect(user.email).toBe("testeUser");
@@ -135,7 +136,8 @@ describe("find one user test", () => {
       user.id,
       transaction
     );
-    console.log(user)
+
+    console.log(findUser)
     expect(findUser.name).toBe(user.name);
     expect(findUser.email).toBe(user.email);
     expect(findUser.role).toBe(user.role);
@@ -226,6 +228,7 @@ describe("find all test", () => {
       await service.create(data, transaction);
     }
     const users = await service.findAll(organization.id, transaction);
+    console.log(users)
     users.forEach((user, index) => {
       if (index === 0) {
         expect(user.name).toBe(`Admin teste`);
@@ -435,6 +438,7 @@ describe("verify test", () => {
   it('success', async () => {
     const { token } = login
     const decoded = security.verifyJwt(token)
+    console.log(decoded.decoded)
     const verify = await service.verify(decoded.decoded.id, decoded.decoded.role, transaction)
     expect(verify.id).toBe(decoded.decoded.id)
     expect(verify.role).toBe(decoded.decoded.role)
@@ -489,15 +493,15 @@ describe("get new jwt test", () => {
   });
 
   it('success', async () => {
-    const repoSession = new repository(require("../models/session.js"))
     const token = login.token
     session = await serviceSession.findSession(token, transaction)
     const idSession = session.id
     const refreshToken = login.refreshToken
     const getNewJwt = await service.getNewJwt(session, refreshToken, transaction)
-    session = await repoSession.findOne({id: idSession}, transaction)
+    session = await serviceSession.findSession(getNewJwt, transaction)
 
     
+    expect(session.id).toBe(idSession)
     expect(getNewJwt).toBe(session.jwt)
 
 

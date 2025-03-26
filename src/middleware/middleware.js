@@ -10,23 +10,39 @@ class middleware {
   }
   auth(role) {
     return async (req, res, next) => {
-      const {refreshToken} = req.body;
       const token = req.headers["authorization"];
-      console.log(token, refreshToken)
 
-      if (!token || !refreshToken) {
+      if (!token) {
         res.status(401).json({ error: "token invalid or not provided" });
         return;
       }
 
       const isJwtValid = this.security.verifyJwt(token)
-      const session = await this.serviceSession.findSession(token)
-
       if (!isJwtValid.isValid) {
         res.status(401).json({ error: "token invalid or not provided" });
         return;
       }
 
+      let session
+      try {
+        console.log(token)
+        session = await this.serviceSession.findSession(token)
+      } catch(err) {
+        if(err.code === 1) {
+          res.status(400).json({error: err.message})
+          return
+      } else {
+        res.status(400).json({error: 'unknow error'})
+        return
+      }
+    }
+      
+      if (!session || !session.dataValues.isValid) {
+        res.status(401).json({ error: "your session as expired, please login again" })
+        return
+      }
+
+     
       const verify = await this.serviceUser.verify(isJwtValid.decoded.id, isJwtValid.decoded.role);
 
       if (!verify || (role && role !== isJwtValid.decoded.role)) {
@@ -34,11 +50,7 @@ class middleware {
         return;
       }
 
-      if (!session || !session.dataValues.isValid) {
-        console.log(session, session.dataValues.isValid)
-        res.status(401).json({ error: "your session as expired, please login again" })
-        return
-      }
+      
       req.session = isJwtValid.decoded;
 
       next();
@@ -56,12 +68,28 @@ class middleware {
       }
 
       const isJwtValid = this.security.verifyJwt(token)
-      const session = await this.serviceSession.findSession(token)
-      const sessionRefreshToken = await this.serviceSession.getRefreshToken(session)
       if (isJwtValid.isValid) {
         res.status(401).json({ error: "for gerenerate a new token, the atual token need to be invalid" });
         return
       }
+
+
+      let session,
+        sessionRefreshToken
+      try {
+        session = await this.serviceSession.findSession(token)
+        sessionRefreshToken = await this.serviceSession.getRefreshToken(session)
+      } catch(err) {
+        if(err.code === 1) {
+          res.status(400).json({error: err.message})
+          return
+        } else {
+          res.status(400).json({error: 'unknow error'})
+          return
+        }
+      }
+      
+      
       if (isJwtValid.decoded === 'tokenExpired') {
         if (req.route.path === "/newJwt") {
           const isRefreshTokenValid = await this.security.compare(refreshToken, sessionRefreshToken)

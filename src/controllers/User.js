@@ -91,11 +91,16 @@ class ApiUser {
   async delete(req, res) {
     try {
       const organizationId = req.session.organizationId
-      const id = req.params.id;
-      const user = await service.delete(organizationId, id);
-      res.status(201).json({ user });
+      const {id} = req.params
+      const user = await service.findOne(organizationId, id) 
+      console.log(user)
+      const deletedUser = await service.delete(user);
+      console.log(deletedUser)
+      res.status(201).json({ deletedUser });
     } catch (err) {
+      console.log(err)
       if (err.code === 1) {
+        console.log(err)
         res.status(400).json({ error: err.message });
       } else {
         console.log(err);

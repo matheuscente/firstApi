@@ -1,6 +1,6 @@
 const serviceUser = require("./User.js");
 const error = require("../fns/error.js");
-const repository = require("../repository/repositoryOrganization.js");
+const repository = require("../repository/repository.js");
 const crypto = require('./crypto.js');
 
 class ServiceOrganization {
@@ -85,10 +85,9 @@ class ServiceOrganization {
     const users = await this.serviceUser.findAll(id, transaction)
     
       await Promise.all(users.map( (user) => {
-         return this.serviceUser.delete(id, user.id, transaction)
+         return this.serviceUser.delete(user, transaction)
       }))
 
-      console.log(organization)
     return this.repository.delete(organization, transaction)
   }
   

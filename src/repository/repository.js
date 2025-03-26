@@ -1,6 +1,11 @@
-class Repository {
+class RepositoryUser {
     constructor(model) {
         this.model = model
+    }
+
+    async findOneWithSensibleFields(whereParams, transaction) {
+        return this.model.scope('withSensibleFields').findOne({where: whereParams, transaction})
+
     }
 
     async findAll(whereParams, transaction) {
@@ -8,7 +13,7 @@ class Repository {
     }
 
     async findOne(whereParams, transaction) {
-        return this.model.findOne({where: whereParams, transaction})
+        return this.model.findOne({where: whereParams, transaction})  
     }
 
     async create(data, transaction) {
@@ -25,4 +30,4 @@ class Repository {
     }
 }
 
-module.exports = Repository
+module.exports = RepositoryUser

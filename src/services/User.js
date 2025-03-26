@@ -1,7 +1,7 @@
 const error = require("../fns/error.js");
 const verifyOrganization = require("../fns/verifyOrganization.js");
 const serviceSession = require("./session.js");
-const repository = require("../repository/repositoryUser.js");
+const repository = require("../repository/repository.js");
 const crypto = require("./crypto.js");
 
 const salt = 10;
@@ -16,7 +16,7 @@ class ServiceUser {
   async findAll(organizationId, transaction) {
     await verifyOrganization(organizationId, transaction);
 
-    const users = await this.repository.findAllWithOutSensibleFields(
+    const users = await this.repository.findAll(
       { organizationId },
       transaction
     );
@@ -33,7 +33,7 @@ class ServiceUser {
       throw this.error("invalid userId");
     }
     await this.verifyOrganization(organizationId, transaction);
-    const user = await this.repository.findOneWithOutSensibleFields(
+    const user = await this.repository.findOne(
       { organizationId, id },
       transaction
     );
@@ -41,7 +41,7 @@ class ServiceUser {
     if (!user) {
       throw this.error("no user with this id in this organization");
     }
-    console.log(user)
+    
     return user
   }
 
@@ -82,7 +82,7 @@ class ServiceUser {
     );
 
     
-    return user
+    return this.findOne(organization.id, user.id, transaction)
   }
 
   async update(organizationId, id, field, value, transaction) {
@@ -157,18 +157,15 @@ class ServiceUser {
   }
 
   async delete(user, transaction) {
-    const deletedUser = await this.repository.delete(await this.repository.findOne({id: user.id}, transaction), transaction);
-    const returnUser = {...deletedUser.dataValues}
-    delete returnUser.password;
-    return returnUser;
+    return await this.repository.delete(user, transaction);
   }
 
   async login(email, password, transaction) {
     if (!email || !password) {
       throw this.error("email or password not provided");
     }
-    const user = await this.repository.findOne({ email }, transaction);
-
+    const user = await this.repository.findOneWithSensibleFields({ email }, transaction);
+    
     if (!user) {
       throw this.error("invalid email or password");
     }
@@ -188,8 +185,11 @@ class ServiceUser {
       60 * 60
     );
 
-    const session = await serviceSession.create(token, user.id, transaction);
+    let session 
 
+    try{session = await serviceSession.create(token, user.id, transaction);} catch(err) {
+      console.log(err)
+    }
     return {
       token,
       refreshToken: session.refreshToken,
@@ -228,6 +228,10 @@ class ServiceUser {
     }
 
     const user = session.user;
+    
+    if(!user) {
+      throw this.error('invalid user')
+    }
 
     const sessionRefreshToken = await this.serviceSession.getRefreshToken(
       session,
@@ -267,13 +271,17 @@ class ServiceUser {
   }
 
   async verify(id, role, transaction) {
+    if(!id) {
+      throw this.error("invalid id")
+    } else if(!role) {
+      throw this.error('invalid role')
+    }
     return await this.repository.findOne({ id, role }, transaction);
   }
 }
 
 module.exports = new ServiceUser(
-  new repository(require("../models/User.js"),
-    require("../models/Organization.js"),
+  new repository(require("../models/User.js")
   ),
   error,
   verifyOrganization,

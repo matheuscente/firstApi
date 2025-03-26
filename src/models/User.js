@@ -40,7 +40,21 @@ class User {
         },
         
       },
-    });
+    },
+    {
+      defaultScope: {
+      attributes: {
+        exclude: ['password']
+      },
+      include: [{model: organization}]
+    },
+    scopes: {
+      withSensibleFields: {
+        include: [{model: organization}]
+      }
+    }
+    },
+  );
 
     this.model.belongsTo(organization, {
       foreignKey: "organizationId",
