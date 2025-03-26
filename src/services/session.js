@@ -24,7 +24,6 @@ class Session {
     const refreshToken = this.security.randomicPass();
     const hashedToken = await this.security.hash(refreshToken, salt);
 
-      console.log(jwt, hashedToken, userId)
     const session = await this.repository.create(
       { jwt, refreshToken: hashedToken, userId, isValid: true },
       transaction
@@ -34,15 +33,7 @@ class Session {
 
   async findAllUserSessions(userId, transaction) {
     const sessions = await this.repository.findAll({ userId }, transaction);
-    const returnSessions = sessions.map((session) => {
-      const returnSessionsMap = { ...session };
-      delete returnSessionsMap.userId;
-      delete returnSessionsMap.user.dataValues.password;
-      delete returnSessionsMap.refreshToken;
-      return returnSessionsMap;
-    });
-
-    return returnSessions;
+    return sessions;
   }
 
   async findSession(jwt, transaction) {
@@ -81,14 +72,14 @@ class Session {
         throw this.error("invalid value to modification");
       }
       updatedSession = await this.repository.update(
-        await this.repository.findOne({ id: session.id }, transaction),
+       session,
         field,
         value,
         transaction
       );
     } else if (field === "isValid" && typeof value === "boolean") {
       updatedSession = await this.repository.update(
-        await this.repository.findOne({ id: session.id }, transaction),
+       session,
         field,
         value,
         transaction
@@ -97,10 +88,7 @@ class Session {
       throw this.error("invalid field to modification");
     }
 
-    const returnUpdatedSession = { ...updatedSession.dataValues};
-    delete returnUpdatedSession.user.dataValues.password;
-    delete returnUpdatedSession.refreshToken
-    return returnUpdatedSession;
+    return updatedSession
   }
 
   async isSessionValid(session, transaction) {

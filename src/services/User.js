@@ -185,11 +185,7 @@ class ServiceUser {
       60 * 60
     );
 
-    let session 
-
-    try{session = await serviceSession.create(token, user.id, transaction);} catch(err) {
-      console.log(err)
-    }
+    const session = await serviceSession.create(token, user.id, transaction);
     return {
       token,
       refreshToken: session.refreshToken,
