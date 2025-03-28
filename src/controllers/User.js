@@ -1,0 +1,178 @@
+const service = require("../factories/services/user.js");
+const serviceOrganization = require('../factories/services/Organization.js');
+
+class ApiUser {
+  async findAll(req, res) {
+    try {
+      const organizationId = req.session.organizationId
+      const users = await service.findAll(organizationId);
+      res.status(200).json(users);
+    } catch (error) {
+      if (error.code === 1) {
+        res.status(400).json({ error: error.message });
+      } else {
+        console.log(error);
+        res.status(400).json({ error: "unknown error" });
+      }
+    }
+  }
+
+  async findOne(req, res) {
+    try {
+      let id = req.params.id 
+
+      const {organizationId} = req.session;
+      if(req.route.path === "/info") {
+        id = req.session.id
+      }
+      const user = await service.findOne(organizationId, id);
+      res.status(200).json(user);
+    } catch (error) {
+      if (error.code === 1) {
+        res.status(400).json({ error: error.message });
+      } else {
+        console.log(error);
+        res.status(400).json({ error: "unknown error" });
+      }
+    }
+  }
+
+  async create(req, res) {
+    try {
+      const organization = await serviceOrganization.findOne(req.session.organizationId)
+      const { name, email, password, role } = req.body;
+      const user = await service.create({
+        organization,
+        name,
+        email,
+        password,
+        role}
+      );
+      res.status(201).json({ created: user });
+    } catch (err) {
+      if (err.code === 1) {
+        res.status(400).json({ error: err.message });
+      } else if (err.name === "SequelizeUniqueConstraintError") {
+        res
+          .status(400)
+          .json({ error: `Please send another ${err.errors[0].path}` });
+      } else {
+        console.log(err);
+        res.status(400).json({ error: `unknown error` });
+      }
+    }
+  }
+
+  async update(req, res) {
+    try {
+      let id = req.params.id || req.session.id
+      const {organizationId} = req.session;
+      const { field, value } = req.body;
+      const user = await service.update(organizationId, id, field, value);
+      res.status(201).json({ user });
+    } catch (err) {
+      if (err.code === 1) {
+        res.status(400).json({ error: err.message });
+      } else if (err.name === "SequelizeUniqueConstraintError") {
+        res
+          .status(400)
+          .json({ error: `Please send another ${err.errors[0].path}` });
+      } else {
+        console.log(err);
+        res.status(400).json({ error: `unknown error` });
+      }
+    }
+  }
+
+  async updateRole(req, res) {
+    try{
+      const {organizationId} = req.session
+      const {id} = req.params
+      const newRole = req.body.role
+      const user = await service.findOne(organizationId, id)
+      const updatedUser = await service.updateRole(user, newRole)
+    } catch(err) {
+      if(err.code === 1) {
+        res.status(400).json({error: err.message})
+      } else {
+        console.log(err)
+        res.status(400).json({error: 'unknown error'})
+      }
+    }
+  }
+
+  async delete(req, res) {
+    try {
+      const organizationId = req.session.organizationId
+      const {id} = req.params
+      const user = await service.findOne(organizationId, id) 
+      console.log(user)
+      const deletedUser = await service.delete(user);
+      console.log(deletedUser)
+      res.status(201).json({ deletedUser });
+    } catch (err) {
+      console.log(err)
+      if (err.code === 1) {
+        console.log(err)
+        res.status(400).json({ error: err.message });
+      } else {
+        console.log(err);
+        res.status(400).json({ error: `unknown error` });
+      }
+    }
+  }
+
+  async login(req, res) {
+    try {
+      const {email, password} = req.body
+
+      const token = await service.login(email, password)
+
+      res.status(200).json({data: token})
+    } catch(err) {
+        if (err.code === 1) {
+          res.status(400).json({ error: err.message });
+        } else {
+          console.log(err);
+          res.status(400).json({ error: `unknown error` });
+        }
+      }
+  }
+
+  async logout(req, res) {
+    try {
+      const {refreshToken} = req.body
+      const jwt = req.headers['authorization']
+      const session = await service.logout(jwt, refreshToken)
+      res.status(200).json({session})
+    } catch(err) {
+      if (err.code === 1) {
+        res.status(400).json({ error: err.message });
+      } else {
+        console.log(err);
+        res.status(400).json({ error: `unknown error` });
+      }
+    }
+  }
+
+  async getNewJwt(req, res) {
+   try {
+    console.log(req.session)
+    const user = await service.findOne(req.session.organizationId, req.session.id)
+    const jwt = req.headers['authorization']
+    const {token} = req.body
+    const newJwt = await service.getNewJwt(jwt, user, token)
+    res.status(200).json({newJwt})
+   } catch(err) {
+    if (err.code === 1) {
+      res.status(400).json({ error: err.message });
+    } else {
+      console.log(err);
+      res.status(400).json({ error: `unknown error` });
+    }
+  }
+  }
+
+}
+
+module.exports = new ApiUser();
